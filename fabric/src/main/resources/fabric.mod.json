@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "kingdom",
+  "version": "${version}",
+  "name": "Tribes and Kingdoms",
+  "description": "Adds tribes and kingdoms gameplay systems for Minecraft.",
+  "authors": [
+    "Michionlion"
+  ],
+  "contact": {
+    "homepage": "https://github.com/michionlion/tribes-and-kingdoms",
+    "sources": "https://github.com/michionlion/tribes-and-kingdoms",
+    "issues": "https://github.com/michionlion/tribes-and-kingdoms/issues"
+  },
+  "license": "GPL-3.0-or-later",
+  "icon": "assets/kingdom/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.michionlion.fabric.KingdomModFabric"
+    ],
+    "client": [
+      "com.michionlion.fabric.client.KingdomModFabricClient"
+    ]
+  },
+  "mixins": [
+    "kingdom.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "architectury": ">=19.0.1",
+    "fabric-api": ">=0.141.3+1.21.11"
+  }
+}

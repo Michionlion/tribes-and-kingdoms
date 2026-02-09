@@ -1,0 +1,28 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Gradle wrapper runtime
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Minecraft dev run directories
+fabric/run/
+neoforge/run/
+run/
+
+# Logs and caches
+logs/
+*.log
+loom-cache/
