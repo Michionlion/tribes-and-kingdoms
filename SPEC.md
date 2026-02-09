@@ -1,4 +1,4 @@
-## Civilization Mod (MC 1.21.11) — consolidated spec → dev task breakdown (Fabric + NeoForge)
+## Tribes and Kingdoms (MC 1.21.11) — consolidated spec → dev task breakdown (Fabric + NeoForge)
 
 ### Core gameplay spec (v1)
 
@@ -23,20 +23,34 @@
 
   * Road existence/placement must not depend on who had higher view distance first; chunk stamping is driven by deterministic planning + server-side chunk lifecycle hooks.
 
+### Definition: “worldgen-first”
+
+In this project, **worldgen-first** means civilization content is authored by generation systems, not by runtime simulation loops:
+
+* Settlement placement, tier assignment, cluster layout, and road plans come from deterministic generation rules (`world seed + region/chunk coordinates`).
+* Features appear as part of world/chunk lifecycle (generation/load stamping), not because villagers or players “build up” civilization state over time.
+* Two servers with the same seed + config should produce equivalent civ topology regardless of player exploration order.
+* Trade bias can react to nearby generated settlement tier, but the settlement graph itself does not evolve in v1.
+
 ---
 
 ## Toolchain + repo architecture (Fabric + NeoForge)
 
-### Recommended starting point: a multiloader template
+### Current project baseline
 
-* Use a **common + fabric + neoforge** split so almost all logic lives in `common`, with loader-specific glue for events/registrations. The widely used “MultiLoader-Template” explicitly targets Fabric/NeoForge branches for modern MC (including a 1.21.11 branch). ([GitHub][1])
-* A similar “common / loader modules” pattern is used by road-generation mods like RoadWeaver (their repo is structured into `common`, `fabric`, and other loader modules). ([GitHub][2])
+* This repo already uses **Architectury** with a `common/`, `fabric/`, `neoforge/` split.
+* Keep almost all gameplay logic in `common`, with loader-specific event wiring in `fabric` and `neoforge`.
+* Use Mojang mappings in shared code and keep loader-only APIs out of `common`.
+* For implementation inspiration, RoadWeaver shows a similar multiloader module split. ([GitHub][2])
 
-### Version realities (as of late 2025 / early 2026)
+### Version baseline (from this repository)
 
-* Fabric for 1.21.11: the Fabric team’s 1.21.11 post calls out **Loom 1.14** and **Loader 0.18.1** for 1.21.11. ([Fabric][3])
-* NeoForge for 1.21.11: NeoForged announced **21.11.0-beta** as the first 1.21.11 line. ([NeoForged][4])
-* If you want the **common** module to compile “close to vanilla,” NeoForge’s **ModDevGradle** supports **Vanilla-mode**, which is useful for a shared codebase that tries to stay loader-agnostic. ([NeoForged Documentation][5])
+* Minecraft: **1.21.11**
+* Java target: **21**
+* Fabric Loader: **0.18.4**
+* Fabric API: **0.141.3+1.21.11**
+* NeoForge: **21.11.38-beta**
+* Architectury API: **19.0.1**
 
 ---
 
@@ -87,7 +101,8 @@ This aligns with your requirement: “when the player sees the chunk the first t
 
 **0.1 Multiloader repo**
 
-* Generate a `common/`, `fabric/`, `neoforge/` project layout (MultiLoader-Template style). ([GitHub][1])
+* `common/`, `fabric/`, `neoforge/` project layout is already present (Architectury).
+* Preserve module boundaries while implementing features.
 * Decide mappings strategy (strong recommendation): **use Mojang mappings in common** to reduce cross-loader name drift; keep Yarn-only references out of common code.
 
 **0.2 Shared “Platform” abstraction (minimal)**
@@ -285,11 +300,7 @@ If you want the fastest path to a compelling v1 without getting stuck in village
 
 If you want, next we can turn this into a *literal* “task list you can paste into GitHub Issues” (epics → tickets with acceptance criteria), but the milestone plan above is already structured to map 1:1 onto epics.
 
-[1]: https://github.com/jaredlll08/MultiLoader-Template "GitHub - jaredlll08/MultiLoader-Template: A template for a NeoForge + Fabric project setup using a Common source set."
 [2]: https://github.com/shiroha-233/RoadWeaver "GitHub - shiroha-233/RoadWeaver"
-[3]: https://fabricmc.net/2025/12/05/12111.html?utm_source=chatgpt.com "Fabric for Minecraft 1.21.11"
-[4]: https://neoforged.net/news/21.11release/?utm_source=chatgpt.com "NeoForge 21.11 for Minecraft 1.21.11"
-[5]: https://docs.neoforged.net/toolchain/docs/plugins/mdg/ "ModDevGradle | NeoForged docs"
 [6]: https://maven.fabricmc.net/docs/fabric-api-0.110.5%2B1.21.4/net/fabricmc/fabric/api/event/lifecycle/v1/ServerChunkEvents.html "ServerChunkEvents (fabric-api 0.110.5+1.21.4 API)"
 [7]: https://nekoyue.github.io/ForgeJavaDocs-NG/javadoc/1.21.x-neoforge/net/neoforged/neoforge/event/level/package-summary.html?utm_source=chatgpt.com "Package net.neoforged.neoforge.event.level"
 [8]: https://docs.neoforged.net/docs/1.21.3/datastorage/saveddata?utm_source=chatgpt.com "Saved Data | NeoForged docs"

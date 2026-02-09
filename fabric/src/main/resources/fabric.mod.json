@@ -3,7 +3,7 @@
   "id": "kingdom",
   "version": "${version}",
   "name": "Tribes and Kingdoms",
-  "description": "Adds tribes and kingdoms gameplay systems for Minecraft.",
+  "description": "Adds vanilla-like deterministic civilization clusters with static tech tiers and pre-planned roads.",
   "authors": [
     "Michionlion"
   ],

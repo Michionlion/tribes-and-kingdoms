@@ -1,81 +1,83 @@
 # AGENTS.md
 
-## Project Snapshot
-- Project: `tribes-and-kingdoms` (Gradle root project name: `tribes-and-kingdoms`)
-- Minecraft target: `1.21.11`
-- Architecture: Architectury multi-loader (`common` + `fabric` + `neoforge`)
+## Source of truth
+
+- Product and implementation scope: `SPEC.md`.
+- Keep implementation decisions aligned with v1 constraints in `SPEC.md` before adding new systems.
+
+## Project snapshot
+
+- Project: `tribes-and-kingdoms`
+- Minecraft: `1.21.11`
 - Java target: `21`
-- Build system: Gradle wrapper (`./gradlew`)
+- Architecture: Architectury multiloader (`common`, `fabric`, `neoforge`)
+- Mod id: `kingdom`
+- Display name: `Tribes and Kingdoms`
 
-## Module Layout
-- `common/`: Shared game logic and classes used by both loaders.
-- `fabric/`: Fabric entrypoints, loader metadata, and Fabric-specific wiring.
-- `neoforge/`: NeoForge entrypoint, metadata, and NeoForge-specific wiring.
+## Version baseline (from `gradle.properties`)
 
-Current entrypoint and shared mod classes:
-- `common/src/main/java/com/michionlion/KingdomMod.java`
-- `fabric/src/main/java/com/michionlion/fabric/KingdomModFabric.java`
-- `fabric/src/main/java/com/michionlion/fabric/client/KingdomModFabricClient.java`
-- `neoforge/src/main/java/com/michionlion/neoforge/KingdomModNeoForge.java`
+- `architectury_api_version = 19.0.1`
+- `fabric_loader_version = 0.18.4`
+- `fabric_api_version = 0.141.3+1.21.11`
+- `neoforge_version = 21.11.38-beta`
 
-## Verified Local Setup
-- JDK: Java 21 is required and currently used by the project (`options.release = 21`).
-- Root build succeeds:
-  - `./gradlew clean build`
-- Loader run tasks exist:
-  - `:fabric:runClient`, `:fabric:runServer`
-  - `:neoforge:runClient`, `:neoforge:runServer`
+## Module responsibilities
 
-## Daily Commands
-- Build everything:
-  - `./gradlew build`
-- Clean + rebuild:
-  - `./gradlew clean build`
-- Run Fabric client:
-  - `./gradlew :fabric:runClient`
-- Run NeoForge client:
-  - `./gradlew :neoforge:runClient`
-- Build only one loader:
-  - `./gradlew :fabric:build`
-  - `./gradlew :neoforge:build`
-- Show available tasks:
-  - `./gradlew :fabric:tasks --all`
-  - `./gradlew :neoforge:tasks --all`
+- `common/`: deterministic planning, world state, routing, generation logic, and shared data structures.
+- `fabric/`: Fabric event hooks and Fabric-only integrations.
+- `neoforge/`: NeoForge event hooks and NeoForge-only integrations.
 
-## Artifact Outputs
-- Fabric jar: `fabric/build/libs/kingdom-fabric-<version>.jar`
-- NeoForge jar: `neoforge/build/libs/kingdom-neoforge-<version>.jar`
-- Common jar(s): `common/build/libs/`
+## V1 gameplay constraints (do not drift)
 
-## Version + Metadata Sync Checklist
-When changing version, mod id, package names, or display name, keep these files aligned:
-- `gradle.properties`
-  - `mod_version`
-  - `archives_name`
-  - dependency versions (`fabric_*`, `neoforge_version`, `architectury_api_version`)
-- `common/src/main/java/com/michionlion/KingdomMod.java`
-  - `MOD_ID`
+- Civilizations are worldgen-first: settlement topology is generated from seed/coordinates and does not rely on runtime civ simulation.
+- Tech tiers are static at generation time: WOOD, STONE, IRON, DIAMOND, NETHERITE.
+- Roads inside clusters are generated with structures; roads between clusters are planned first and stamped per chunk.
+- Road placement must be player-order independent; stamping is server-side and idempotent.
+- No custom villager AI/simulation in v1; only trade bias by settlement tier.
+
+## Loader hook guidance
+
+- Fabric chunk stamping: use `ServerChunkEvents` load/generation lifecycle hooks.
+- NeoForge chunk stamping: use `ChunkEvent.Load`.
+- Avoid NeoForge `ChunkDataEvent.Load` for block placement.
+
+## Persistence guidance
+
+- Store anchors, road graph, and stamped chunk markers in world saved data (`SavedData`/`PersistentState` pattern).
+- Ensure schema has a version field for future migration.
+
+## Planning kickoff (next implementation phase)
+
+- Milestone 1: core domain model and `CivWorldState` persistence.
+- Milestone 2: deterministic anchor placement and suitability sampling.
+- Milestone 3: settlement/worldgen assets and internal roads.
+- Milestone 4: inter-cluster road graph, chunk intersection index, and stamping queue.
+- Milestone 5: villager trade bias integration.
+
+## Build and run commands
+
+- Build all: `./gradlew build`
+- Clean build: `./gradlew clean build`
+- Fabric client: `./gradlew :fabric:runClient`
+- NeoForge client: `./gradlew :neoforge:runClient`
+- List tasks: `./gradlew :fabric:tasks --all` / `./gradlew :neoforge:tasks --all`
+
+## Artifact outputs
+
+- `fabric/build/libs/tribes-and-kingdoms-fabric-<version>.jar`
+- `neoforge/build/libs/tribes-and-kingdoms-neoforge-<version>.jar`
+
+## Metadata sync checklist
+
+When changing naming/versioning, keep these aligned:
+
+- `gradle.properties` (`mod_version`, `archives_name`, dependency versions)
+- `common/src/main/java/com/michionlion/KingdomMod.java` (`MOD_ID`)
 - `fabric/src/main/resources/fabric.mod.json`
-  - `id`, `name`, `entrypoints`, `depends`
 - `neoforge/src/main/resources/META-INF/neoforge.mods.toml`
-  - `modId`, `displayName`, dependency ranges
 - `common/src/main/resources/kingdom.mixins.json`
-  - package + mixin declarations
 
-## Editing Rules For This Repo
-- Put cross-loader gameplay/content logic in `common/`.
-- Keep loader modules thin: entrypoints, registration glue, and platform-specific integrations only.
-- Avoid using Fabric-only or NeoForge-only APIs directly from `common/`.
-- If renaming core/entrypoint classes, update metadata entrypoint paths in the same change.
+## Pre-commit validation
 
-## Remaining Cleanup Ideas
-- Verify metadata links if repository ownership/path changes:
-  - `fabric/src/main/resources/fabric.mod.json`
-  - `neoforge/src/main/resources/META-INF/neoforge.mods.toml`
-- Revisit `modId`/`archives_name` naming if the final branding differs from `kingdom`.
-- Confirm license identifier remains accurate (`GPL-3.0-or-later`) for release packaging.
-
-## Quick Validation Before Committing
 - `./gradlew clean build`
-- `./gradlew :fabric:runClient` (smoke test)
-- `./gradlew :neoforge:runClient` (smoke test)
+- Optional smoke tests: `:fabric:runClient` and `:neoforge:runClient`

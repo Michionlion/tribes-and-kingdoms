@@ -9,7 +9,7 @@ version = "${version}"
 displayName = "Tribes and Kingdoms"
 authors = "Michionlion"
 description = '''
-Adds tribes and kingdoms gameplay systems for Minecraft.
+Adds vanilla-like deterministic civilization clusters with static tech tiers and pre-planned roads.
 '''
 #logoFile = ""
 
