@@ -7,6 +7,16 @@ architectury {
     neoForge()
 }
 
+sourceSets {
+    gameTest {
+        java.setSrcDirs(["src/gametest/java"])
+        resources.setSrcDirs(["src/gametest/resources"])
+
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+
 configurations {
     common {
         canBeResolved = true
@@ -22,9 +32,41 @@ configurations {
         canBeResolved = true
         canBeConsumed = false
     }
+
+    gameTestImplementation.extendsFrom implementation
+    gameTestCompileOnly.extendsFrom compileOnly
+    gameTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+loom {
+    runs {
+        ciGameTestServer {
+            environment("server")
+            forgeTemplate("gameTestServer")
+            source(sourceSets.gameTest)
+            runDir("run/gametest-neoforge")
+            programArg("nogui")
+            property("neoforge.enableGameTest", "true")
+        }
+    }
 }
 
 repositories {
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
+    maven {
+        name = "Xaero's Maven"
+        url = "https://chocolateminecraft.com/maven"
+        content {
+            includeGroup "xaero.lib"
+            includeGroup "xaero.map"
+        }
+    }
     maven {
         name = "NeoForged"
         url = "https://maven.neoforged.net/releases"
@@ -36,6 +78,10 @@ dependencies {
 
     // Architectury API. This is optional, and you can comment it out if you don't need it.
     modImplementation "dev.architectury:architectury-neoforge:$rootProject.architectury_api_version"
+    // Dev-only mods for runClient; not bundled in release jars.
+    modLocalRuntime "maven.modrinth:chunky:$rootProject.chunky_neoforge_modrinth_version"
+    modLocalRuntime "xaero.lib:xaerolib-neoforge-$rootProject.minecraft_version:$rootProject.xaero_lib_neoforge_version"
+    modLocalRuntime "xaero.map:xaeroworldmap-neoforge-$rootProject.minecraft_version:$rootProject.xaero_world_map_neoforge_version"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
     shadowBundle project(path: ":common", configuration: "transformProductionNeoForge")

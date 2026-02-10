@@ -80,4 +80,5 @@ When changing naming/versioning, keep these aligned:
 ## Pre-commit validation
 
 - `./gradlew clean build`
+- `./gradlew :fabric:test :neoforge:runCiGameTestServer`
 - Optional smoke tests: `:fabric:runClient` and `:neoforge:runClient`

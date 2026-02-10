@@ -7,6 +7,17 @@ architectury {
     fabric()
 }
 
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "kingdom-gametest"
+        enableGameTests = true
+        enableClientGameTests = false
+        eula = true
+        clearRunDirectory = true
+    }
+}
+
 configurations {
     common {
         canBeResolved = true
@@ -22,6 +33,30 @@ configurations {
         canBeResolved = true
         canBeConsumed = false
     }
+
+    // External dev mods copied into run/mods; avoids Loom metadata checks on this config.
+    externalDevClientMods {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+}
+
+repositories {
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
+    maven {
+        name = "Xaero's Maven"
+        url = "https://chocolateminecraft.com/maven"
+        content {
+            includeGroup "xaero.lib"
+            includeGroup "xaero.map"
+        }
+    }
 }
 
 dependencies {
@@ -32,6 +67,12 @@ dependencies {
 
     // Architectury API. This is optional, and you can comment it out if you don't need it.
     modImplementation "dev.architectury:architectury-fabric:$rootProject.architectury_api_version"
+    // Dev-only mods for runClient; not bundled in release jars.
+    modLocalRuntime "maven.modrinth:chunky:$rootProject.chunky_fabric_modrinth_version"
+    modLocalRuntime "maven.modrinth:sodium:$rootProject.sodium_fabric_modrinth_version"
+    modLocalRuntime "xaero.lib:xaerolib-fabric-$rootProject.minecraft_version:$rootProject.xaero_lib_fabric_version"
+    modLocalRuntime "xaero.map:xaeroworldmap-fabric-$rootProject.minecraft_version:$rootProject.xaero_world_map_fabric_version"
+    externalDevClientMods "maven.modrinth:voxy:$rootProject.voxy_fabric_modrinth_version"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
     shadowBundle project(path: ":common", configuration: "transformProductionFabric")
@@ -52,4 +93,13 @@ shadowJar {
 
 remapJar {
     inputFile.set shadowJar.archiveFile
+}
+
+def copyFabricExternalDevMods = tasks.register("copyFabricExternalDevMods", Copy) {
+    from(configurations.externalDevClientMods)
+    into(layout.projectDirectory.dir("run/mods"))
+}
+
+tasks.matching { it.name == "runClient" }.configureEach {
+    dependsOn(copyFabricExternalDevMods)
 }

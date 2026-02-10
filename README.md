@@ -39,11 +39,27 @@ A Minecraft 1.21.11 mod (for Fabric and NeoForge) focused on vanilla-like determ
 - Clean build: `./gradlew clean build`
 - Run Fabric client: `./gradlew :fabric:runClient`
 - Run NeoForge client: `./gradlew :neoforge:runClient`
+- Run Fabric game tests: `./gradlew :fabric:test`
+- Run NeoForge game tests: `./gradlew :neoforge:runCiGameTestServer`
+- Full local gate: `./gradlew clean :common:test :fabric:test :neoforge:runCiGameTestServer build`
 
 Artifacts:
 
 - `fabric/build/libs/tribes-and-kingdoms-fabric-<version>.jar`
 - `neoforge/build/libs/tribes-and-kingdoms-neoforge-<version>.jar`
+
+## Dev Command Helpers
+
+- `:fabric:runClient` and `:neoforge:runClient` include dev-only map/pregen mods.
+- Included in Fabric dev runtime: Chunky, Sodium, Xaero's World Map + XaeroLib (`modLocalRuntime`) and Voxy (copied to `fabric/run/mods` before `runClient`).
+- Included in NeoForge dev runtime: Chunky, Xaero's World Map + XaeroLib.
+- `:fabric:runClient` and `:neoforge:runClient` enable a built-in dev command bridge.
+- While the client is running in a singleplayer world, append commands to:
+  - `fabric/run/kingdom-dev-commands.txt` (Fabric client run)
+  - `neoforge/run/kingdom-dev-commands.txt` (NeoForge client run)
+- One command per line; leading `/` is optional; lines starting with `#` are ignored.
+- The bridge consumes and clears the file after reading commands.
+- Commands run as the local player on the integrated server, so normal command permissions still apply.
 
 ## Metadata
 
@@ -64,3 +80,13 @@ Artifacts:
 - Scaffolding and multiloader setup are in place.
 - Placeholder class and metadata cleanup is complete.
 - Next coding phase should begin with Milestone 1 domain + persistence scaffolding.
+
+## Automated Game Tests
+
+- Fabric game tests are executed through `:fabric:test` and include a deterministic traversal smoke test.
+- NeoForge game tests are executed through `:neoforge:runCiGameTestServer` and use registry-based test registration.
+- The traversal test validates:
+  - server boot success
+  - mock player movement in hybrid concentric traversal out to 1024 blocks
+  - chunk generation progress and minimum generated chunk threshold
+- CI runs these checks on every pull request and every push.

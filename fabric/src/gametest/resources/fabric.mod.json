@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "kingdom-gametest",
+  "version": "1.0.0",
+  "name": "Tribes and Kingdoms Game Tests",
+  "description": "Game test entrypoint module for Tribes and Kingdoms.",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "com.michionlion.fabric.gametest.FabricWorldBootAndTraversalTests"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "~1.21.11",
+    "fabric-gametest-api-v1": "*"
+  }
+}
