@@ -1,11 +1,13 @@
 package com.michionlion.neoforge;
 
 import com.mojang.logging.LogUtils;
+import com.michionlion.KingdomMod;
+import com.michionlion.neoforge.gametest.NeoForgeWorldBootAndTraversalTests;
+import dev.architectury.platform.Platform;
+import dev.architectury.utils.Env;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
-
-import com.michionlion.KingdomMod;
 
 @Mod(KingdomMod.MOD_ID)
 public final class KingdomModNeoForge {
@@ -13,22 +15,29 @@ public final class KingdomModNeoForge {
 
     public KingdomModNeoForge(IEventBus modEventBus) {
         KingdomMod.init();
-        bootstrapGameTestsIfEnabled(modEventBus);
+        registerClientConfigScreenIfNeeded();
+        registerGameTestsIfEnabled(modEventBus);
     }
 
-    private static void bootstrapGameTestsIfEnabled(IEventBus modEventBus) {
+    private static void registerGameTestsIfEnabled(IEventBus modEventBus) {
         if (!Boolean.getBoolean("neoforge.enableGameTest")) {
             return;
         }
 
+        modEventBus.addListener(NeoForgeWorldBootAndTraversalTests::registerGameTests);
+        LOGGER.info("Registered NeoForge game tests for {}.", KingdomMod.MOD_ID);
+    }
+
+    private static void registerClientConfigScreenIfNeeded() {
+        if (Platform.getEnvironment() != Env.CLIENT) {
+            return;
+        }
+
         try {
-            Class<?> bootstrapClass = Class.forName("com.michionlion.neoforge.gametest.NeoForgeWorldBootAndTraversalTests");
-            bootstrapClass.getMethod("bootstrap", IEventBus.class).invoke(null, modEventBus);
-            LOGGER.info("Registered NeoForge game tests for {}.", KingdomMod.MOD_ID);
-        } catch (ClassNotFoundException ignored) {
-            LOGGER.debug("NeoForge game test classes are not on the classpath; skipping test bootstrap.");
+            Class<?> bridgeClass = Class.forName("com.michionlion.neoforge.client.KingdomModNeoForgeClientConfig");
+            bridgeClass.getMethod("registerConfigScreen").invoke(null);
         } catch (ReflectiveOperationException error) {
-            throw new IllegalStateException("Failed to bootstrap NeoForge game tests.", error);
+            throw new IllegalStateException("Failed to register NeoForge config screen extension point.", error);
         }
     }
 }

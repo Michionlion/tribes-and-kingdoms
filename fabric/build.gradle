@@ -67,11 +67,16 @@ dependencies {
 
     // Architectury API. This is optional, and you can comment it out if you don't need it.
     modImplementation "dev.architectury:architectury-fabric:$rootProject.architectury_api_version"
+    modImplementation("me.shedaniel.cloth:cloth-config-fabric:$rootProject.cloth_config_version") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+    modCompileOnly "maven.modrinth:modmenu:$rootProject.modmenu_version"
+    modLocalRuntime "maven.modrinth:modmenu:$rootProject.modmenu_version"
     // Dev-only mods for runClient; not bundled in release jars.
-    modLocalRuntime "maven.modrinth:chunky:$rootProject.chunky_fabric_modrinth_version"
-    modLocalRuntime "maven.modrinth:sodium:$rootProject.sodium_fabric_modrinth_version"
-    modLocalRuntime "xaero.lib:xaerolib-fabric-$rootProject.minecraft_version:$rootProject.xaero_lib_fabric_version"
-    modLocalRuntime "xaero.map:xaeroworldmap-fabric-$rootProject.minecraft_version:$rootProject.xaero_world_map_fabric_version"
+    externalDevClientMods "maven.modrinth:chunky:$rootProject.chunky_fabric_modrinth_version"
+    externalDevClientMods "maven.modrinth:sodium:$rootProject.sodium_fabric_modrinth_version"
+    externalDevClientMods "xaero.lib:xaerolib-fabric-$rootProject.minecraft_version:$rootProject.xaero_lib_fabric_version"
+    externalDevClientMods "xaero.map:xaeroworldmap-fabric-$rootProject.minecraft_version:$rootProject.xaero_world_map_fabric_version"
     externalDevClientMods "maven.modrinth:voxy:$rootProject.voxy_fabric_modrinth_version"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
@@ -102,4 +107,8 @@ def copyFabricExternalDevMods = tasks.register("copyFabricExternalDevMods", Copy
 
 tasks.matching { it.name == "runClient" }.configureEach {
     dependsOn(copyFabricExternalDevMods)
+}
+
+tasks.matching { it.name == "runGameTest" }.configureEach {
+    jvmArgs("-Dkingdom.gametest.seed=${rootProject.kingdom_gametest_seed}")
 }
