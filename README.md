@@ -60,6 +60,33 @@ Artifacts:
 - One command per line; leading `/` is optional; lines starting with `#` are ignored.
 - The bridge consumes and clears the file after reading commands.
 - Commands run as the local player on the integrated server, so normal command permissions still apply.
+- Milestone 2 debug commands are rooted at `/kingdom`:
+  - `/kingdom generate around 2 true`
+  - `/kingdom summary 3`
+  - `/kingdom visualize anchors 2048`
+  - `/kingdom export geojson 4 true`
+  - `/kingdom config show`
+
+## GeoJSON Analysis Helper
+
+- Run end-to-end game tests + analysis for both loaders with:
+  - `./gradlew analyzeKingdomGeoJson`
+- Build artifacts written by the task:
+  - `build/geojson-analysis/fabric/kingdom-geojson-visual-review.svg`
+  - `build/geojson-analysis/neoforge/kingdom-geojson-visual-review.svg`
+  - `build/geojson-analysis/fabric/analysis-summary.json`
+  - `build/geojson-analysis/neoforge/analysis-summary.json`
+- Analyze exported placement snapshots with:
+  - `python scripts/analyze_kingdom_geojson.py <path-to-geojson> --config <path-to-kingdom-placement.toml>`
+- The script writes:
+  - `analysis-summary.json`
+  - `kingdom-geojson-visual-review.svg`
+- Example (game test export at region `0,0`):
+  - `python scripts/analyze_kingdom_geojson.py fabric/build/run/gameTest/debug/kingdom/kingdom-command-export-region-0-0.geojson --config fabric/build/run/gameTest/config/kingdom-placement.toml --expect-center 0 0 --expect-radius 0 --out-dir /tmp/kingdom-geojson-review-region0`
+- For a 3x3 region window around `0,0`, export with:
+  - `/kingdom generate around 1 true`
+  - `/kingdom export geojson 1 true kingdom-export-3x3-region-0-0`
+  - then analyze with `--expect-center 0 0 --expect-radius 1`
 
 ## Metadata
 

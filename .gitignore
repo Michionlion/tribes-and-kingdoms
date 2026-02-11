@@ -27,3 +27,8 @@ run/
 logs/
 *.log
 loom-cache/
+.architectury-transformer/
+
+# Scripts
+*.pyc
+__pycache__/

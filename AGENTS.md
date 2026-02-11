@@ -82,3 +82,22 @@ When changing naming/versioning, keep these aligned:
 - `./gradlew clean build`
 - `./gradlew :fabric:test :neoforge:runCiGameTestServer`
 - Optional smoke tests: `:fabric:runClient` and `:neoforge:runClient`
+
+## GeoJSON debug workflow
+
+- Reusable analyzer script: `scripts/analyze_kingdom_geojson.py`
+- Preferred one-shot task: `./gradlew analyzeKingdomGeoJson`
+  - Runs `:fabric:runGameTest` + `:neoforge:runCiGameTestServer`
+  - Writes build artifacts:
+    - `build/geojson-analysis/fabric/kingdom-geojson-visual-review.svg`
+    - `build/geojson-analysis/neoforge/kingdom-geojson-visual-review.svg`
+    - `build/geojson-analysis/fabric/analysis-summary.json`
+    - `build/geojson-analysis/neoforge/analysis-summary.json`
+- Use it for Milestone 2 placement exports to generate:
+  - `analysis-summary.json`
+  - `kingdom-geojson-visual-review.svg`
+- Preferred analysis inputs:
+  - Fabric game test export: `fabric/build/run/gameTest/debug/kingdom/*.geojson`
+  - NeoForge game test export: `neoforge/run/gametest-neoforge/debug/kingdom/*.geojson`
+- For 3x3 validation around region `(0,0)`, export with radius `1` and analyze with:
+  - `--expect-center 0 0 --expect-radius 1`

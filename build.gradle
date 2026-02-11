@@ -72,3 +72,65 @@ subprojects {
         }
     }
 }
+
+def kingdomGeoJsonAnalyzerScript = rootProject.file("scripts/analyze_kingdom_geojson.py")
+
+def registerKingdomGeoJsonAnalysisTask = { String taskName, String runTaskPath, String loaderName, String geoJsonPath, String configPath ->
+    tasks.register(taskName) {
+        group = "verification"
+        description = "Run ${loaderName} kingdom GeoJSON analysis and write SVG/summary under build/geojson-analysis."
+        dependsOn(runTaskPath)
+
+        def analysisOutDir = layout.buildDirectory.dir("geojson-analysis/${loaderName}")
+        def geoJsonFile = rootProject.file(geoJsonPath)
+        def configFile = rootProject.file(configPath)
+
+        inputs.file(geoJsonFile)
+        inputs.file(configFile)
+        inputs.file(kingdomGeoJsonAnalyzerScript)
+
+        doLast {
+            if (!kingdomGeoJsonAnalyzerScript.isFile()) throw new GradleException("Missing analyzer script: ${kingdomGeoJsonAnalyzerScript}")
+            if (!geoJsonFile.isFile()) throw new GradleException("Missing loader GeoJSON export: ${geoJsonFile}")
+            if (!configFile.isFile()) throw new GradleException("Missing loader config file: ${configFile}")
+
+            def outDirFile = analysisOutDir.get().asFile
+            outDirFile.mkdirs()
+
+            exec {
+                commandLine(
+                    "python3",
+                    kingdomGeoJsonAnalyzerScript.absolutePath,
+                    geoJsonFile.absolutePath,
+                    "--expect-center", "0", "0",
+                    "--expect-radius", "0",
+                    "--config", configFile.absolutePath,
+                    "--out-dir", outDirFile.absolutePath
+                )
+            }
+        }
+    }
+}
+
+registerKingdomGeoJsonAnalysisTask(
+    "fabricAnalyzeGeoJson",
+    ":fabric:runGameTest",
+    "fabric",
+    "fabric/build/run/gameTest/debug/kingdom/kingdom-command-export-region-0-0.geojson",
+    "fabric/build/run/gameTest/config/kingdom-placement.toml"
+)
+
+registerKingdomGeoJsonAnalysisTask(
+    "neoForgeAnalyzeGeoJson",
+    ":neoforge:runCiGameTestServer",
+    "neoforge",
+    "neoforge/run/gametest-neoforge/debug/kingdom/kingdom-command-export-region-0-0.geojson",
+    "neoforge/run/gametest-neoforge/config/kingdom-placement.toml"
+)
+
+task analyzeKingdomGeoJson {
+    group = "verification"
+    description = "Run Fabric + NeoForge game tests and write GeoJSON analysis artifacts under build/geojson-analysis."
+    dependsOn "fabricAnalyzeGeoJson"
+    dependsOn "neoForgeAnalyzeGeoJson"
+}
