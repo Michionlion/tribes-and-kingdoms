@@ -1,16 +1,27 @@
 package com.michionlion.fabric.gametest;
 
+import com.michionlion.kingdom.civ.model.RegionKey;
+import com.michionlion.kingdom.civ.state.CivWorldState;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.phys.Vec3;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +42,8 @@ public final class FabricWorldBootAndTraversalTests {
 
     private static final int GENERATED_CHUNK_SAMPLE_RADIUS = 2;
     private static final int MIN_UNIQUE_GENERATED_CHUNKS = 64;
+    private static final String COMMAND_SNAPSHOT_FILENAME = "kingdom-command-export-region-0-0.geojson";
+    private static final String COMMAND_SNAPSHOT_RESOURCE = "kingdom/gametest/snapshots/" + COMMAND_SNAPSHOT_FILENAME;
 
     @GameTest(
         structure = "kingdom:empty",
@@ -95,6 +108,79 @@ public final class FabricWorldBootAndTraversalTests {
             completed[0] = true;
             if (valid) {
                 helper.succeed();
+            }
+        });
+    }
+
+    @GameTest(
+        structure = "kingdom:empty",
+        setupTicks = 20,
+        maxTicks = 320,
+        required = true,
+        manualOnly = false,
+        maxAttempts = 1,
+        requiredSuccesses = 1,
+        skyAccess = true
+    )
+    public void kingdomCommandsGenerateAndExportSnapshot(GameTestHelper helper) {
+        if (helper.getLevel() == null) {
+            helper.fail("Server level is null during command test startup.");
+            return;
+        }
+
+        helper.runAtTickTime(1L, () -> {
+            try {
+                ServerLevel level = helper.getLevel();
+                Path outputPath = Path.of("debug", "kingdom", COMMAND_SNAPSHOT_FILENAME);
+                Files.createDirectories(outputPath.getParent());
+                Files.deleteIfExists(outputPath);
+
+                CommandSourceStack source = level.getServer()
+                    .createCommandSourceStack()
+                    .withLevel(level)
+                    .withPosition(new Vec3(0.5D, 90.0D, 0.5D))
+                    .withMaximumPermission(PermissionSet.ALL_PERMISSIONS)
+                    .withSuppressedOutput();
+
+                runCommand(level, source, "kingdom config show");
+                runCommand(level, source, "kingdom config reload");
+                runCommand(level, source, "kingdom generate region 0 0 true");
+                runCommand(level, source, "kingdom generate around 0 false");
+                runCommand(level, source, "kingdom summary 0");
+                runCommand(level, source, "kingdom visualize anchors 512");
+                runCommand(level, source, "kingdom export geojson 0 true kingdom-command-export-region-0-0");
+
+                if (!CivWorldState.get(level).isRegionPlanned(new RegionKey(0, 0))) {
+                    helper.fail("Expected planned region 0,0 after command execution.");
+                    return;
+                }
+
+                if (!Files.isRegularFile(outputPath)) {
+                    helper.fail("Expected exported geojson at " + outputPath.toAbsolutePath());
+                    return;
+                }
+
+                String actual = normalize(Files.readString(outputPath, StandardCharsets.UTF_8));
+                String expected = readResourceOrNull(COMMAND_SNAPSHOT_RESOURCE);
+                if (expected == null) {
+                    helper.fail("Missing required snapshot resource: " + COMMAND_SNAPSHOT_RESOURCE);
+                    return;
+                }
+
+                String normalizedExpected = normalize(expected);
+                if (!normalizedExpected.equals(actual)) {
+                    helper.fail(
+                        "GeoJSON snapshot mismatch for /kingdom export."
+                            + " expected_sha256=" + sha256(normalizedExpected)
+                            + " actual_sha256=" + sha256(actual)
+                            + " output=" + outputPath.toAbsolutePath()
+                    );
+                    return;
+                }
+
+                helper.succeed();
+            } catch (Exception error) {
+                helper.fail("Command regression test failed: " + error.getMessage());
             }
         });
     }
@@ -202,6 +288,33 @@ public final class FabricWorldBootAndTraversalTests {
 
     private static String formatDouble(double value) {
         return String.format(java.util.Locale.ROOT, "%.2f", value);
+    }
+
+    private static void runCommand(ServerLevel level, CommandSourceStack source, String command) {
+        level.getServer().getCommands().performPrefixedCommand(source, command);
+    }
+
+    private static String normalize(String content) {
+        return content.replace("\r\n", "\n").trim();
+    }
+
+    private static String readResourceOrNull(String resourcePath) throws Exception {
+        try (InputStream stream = FabricWorldBootAndTraversalTests.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (stream == null) {
+                return null;
+            }
+            return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private static String sha256(String input) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+        StringBuilder builder = new StringBuilder(hash.length * 2);
+        for (byte b : hash) {
+            builder.append(String.format(java.util.Locale.ROOT, "%02x", b));
+        }
+        return builder.toString();
     }
 
     private record Waypoint(BlockPos pos, boolean innerRing) {
