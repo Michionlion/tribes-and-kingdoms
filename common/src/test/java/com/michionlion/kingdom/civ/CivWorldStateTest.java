@@ -46,8 +46,8 @@ class CivWorldStateTest {
             Set.of(requiredResource("minecraft:is_overworld"))
         );
 
-        original.putAnchor(new RegionKey(0, 0), anchorA);
-        original.putAnchor(new RegionKey(1, 0), anchorB);
+        original.replaceRegionPlan(new RegionKey(0, 0), List.of(anchorA));
+        original.replaceRegionPlan(new RegionKey(1, 0), List.of(anchorB));
 
         RoadEdge edge = new RoadEdge(
             201L,
@@ -95,8 +95,8 @@ class CivWorldStateTest {
         CivWorldState loaded = CivWorldState.fromTag(tag);
 
         assertEquals(CivWorldState.CURRENT_SCHEMA_VERSION, loaded.schemaVersion());
-        assertEquals(77L, loaded.worldSeedHash());
-        assertEquals(4, loaded.regionGenerationVersion());
+        assertEquals(0L, loaded.worldSeedHash());
+        assertEquals(0, loaded.regionGenerationVersion());
     }
 
     @Test
@@ -125,7 +125,8 @@ class CivWorldStateTest {
             Set.of(requiredResource("minecraft:is_overworld"))
         );
 
-        state.putAnchor(new RegionKey(3, -2), anchor);
+        RegionKey region = new RegionKey(3, -2);
+        state.replaceRegionPlan(region, List.of(anchor));
 
         Map<Long, LongList> index = state.anchorsByRegion();
         for (LongList ids : index.values()) {
@@ -133,6 +134,9 @@ class CivWorldStateTest {
                 assertTrue(state.civGraph().anchorsById().containsKey(id));
             }
         }
+
+        assertTrue(state.isRegionPlanned(region));
+        assertEquals(1, state.anchorsInRegion(region).size());
     }
 
     @Test
@@ -143,6 +147,40 @@ class CivWorldStateTest {
         assertFalse(state.markChunkStamped(33L));
         assertTrue(state.isChunkStamped(33L));
         assertEquals(1, state.stampedChunks().size());
+    }
+
+    @Test
+    void replaceRegionPlanOverwritesAnchorsInRegion() {
+        CivWorldState state = new CivWorldState();
+        RegionKey region = new RegionKey(2, 2);
+
+        SettlementAnchor first = new SettlementAnchor(
+            500L,
+            new BlockPos(50, 70, 50),
+            TechTier.STONE,
+            SettlementType.KINGDOM_CAPITAL,
+            64,
+            1L,
+            Set.of(requiredResource("minecraft:is_overworld"))
+        );
+
+        SettlementAnchor second = new SettlementAnchor(
+            501L,
+            new BlockPos(90, 70, 90),
+            TechTier.IRON,
+            SettlementType.KINGDOM_TOWN,
+            40,
+            1L,
+            Set.of(requiredResource("minecraft:is_overworld"))
+        );
+
+        state.replaceRegionPlan(region, List.of(first));
+        assertEquals(List.of(first), state.anchorsInRegion(region));
+
+        state.replaceRegionPlan(region, List.of(second));
+        assertEquals(List.of(second), state.anchorsInRegion(region));
+        assertFalse(state.civGraph().anchorsById().containsKey(first.id()));
+        assertTrue(state.civGraph().anchorsById().containsKey(second.id()));
     }
 
     private static Identifier requiredResource(String id) {

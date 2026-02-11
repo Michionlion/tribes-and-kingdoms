@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,13 +42,14 @@ public final class CivWorldState extends SavedData {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final String DATA_NAME = "kingdom_civ_world_state";
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
 
     private static final String KEY_SCHEMA_VERSION = "schema_version";
     private static final String KEY_WORLD_SEED_HASH = "world_seed_hash";
     private static final String KEY_REGION_GENERATION_VERSION = "region_generation_version";
     private static final String KEY_ANCHORS = "anchors";
     private static final String KEY_ANCHORS_BY_REGION = "anchors_by_region";
+    private static final String KEY_PLANNED_REGIONS = "planned_regions";
     private static final String KEY_EDGES = "edges";
     private static final String KEY_STAMPED_CHUNKS = "stamped_chunks";
 
@@ -96,6 +98,7 @@ public final class CivWorldState extends SavedData {
     private int regionGenerationVersion;
     private final CivGraph civGraph;
     private final Map<Long, LongArrayList> anchorsByRegion;
+    private final LongSet plannedRegions;
     private final LongSet stampedChunks;
 
     public CivWorldState() {
@@ -104,6 +107,7 @@ public final class CivWorldState extends SavedData {
         this.regionGenerationVersion = 0;
         this.civGraph = new CivGraph();
         this.anchorsByRegion = new LinkedHashMap<>();
+        this.plannedRegions = new LongOpenHashSet();
         this.stampedChunks = new LongOpenHashSet();
     }
 
@@ -116,13 +120,10 @@ public final class CivWorldState extends SavedData {
     public static CivWorldState fromTag(CompoundTag tag) {
         CivWorldState state = new CivWorldState();
 
-        int loadedSchemaVersion = tag.contains(KEY_SCHEMA_VERSION)
-            ? tag.getIntOr(KEY_SCHEMA_VERSION, CURRENT_SCHEMA_VERSION)
-            : CURRENT_SCHEMA_VERSION;
-
-        if (loadedSchemaVersion > CURRENT_SCHEMA_VERSION) {
+        int loadedSchemaVersion = tag.getIntOr(KEY_SCHEMA_VERSION, -1);
+        if (loadedSchemaVersion != CURRENT_SCHEMA_VERSION) {
             LOGGER.warn(
-                "Skipping civ world state load because schema version {} is newer than supported {}.",
+                "Resetting civ world state due to schema mismatch. found={}, required={}",
                 loadedSchemaVersion,
                 CURRENT_SCHEMA_VERSION
             );
@@ -151,6 +152,11 @@ public final class CivWorldState extends SavedData {
             long regionKey = regionTag.getLongOr(KEY_REGION_KEY, 0L);
             long[] anchorIdsArray = regionTag.getLongArray(KEY_REGION_ANCHOR_IDS).orElseGet(() -> new long[0]);
             state.anchorsByRegion.put(regionKey, new LongArrayList(anchorIdsArray));
+        }
+
+        long[] plannedRegionArray = tag.getLongArray(KEY_PLANNED_REGIONS).orElseGet(() -> new long[0]);
+        for (long plannedRegion : plannedRegionArray) {
+            state.plannedRegions.add(plannedRegion);
         }
 
         long[] stamped = tag.getLongArray(KEY_STAMPED_CHUNKS).orElseGet(() -> new long[0]);
@@ -187,6 +193,10 @@ public final class CivWorldState extends SavedData {
             byRegionTag.add(regionTag);
         }
         tag.put(KEY_ANCHORS_BY_REGION, byRegionTag);
+
+        long[] plannedRegionArray = plannedRegions.toLongArray();
+        Arrays.sort(plannedRegionArray);
+        tag.putLongArray(KEY_PLANNED_REGIONS, plannedRegionArray);
 
         long[] stampedChunksArray = stampedChunks.toLongArray();
         Arrays.sort(stampedChunksArray);
@@ -237,6 +247,31 @@ public final class CivWorldState extends SavedData {
         return new LongOpenHashSet(stampedChunks);
     }
 
+    public SettlementAnchor anchor(long anchorId) {
+        return civGraph.anchor(anchorId);
+    }
+
+    public List<SettlementAnchor> anchorsInRegion(RegionKey regionKey) {
+        LongArrayList anchorIds = anchorsByRegion.get(regionKey.asLong());
+        if (anchorIds == null || anchorIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<SettlementAnchor> anchors = new ArrayList<>(anchorIds.size());
+        for (long anchorId : anchorIds) {
+            SettlementAnchor anchor = civGraph.anchor(anchorId);
+            if (anchor != null) {
+                anchors.add(anchor);
+            }
+        }
+
+        return List.copyOf(anchors);
+    }
+
+    public boolean isRegionPlanned(RegionKey regionKey) {
+        return plannedRegions.contains(regionKey.asLong());
+    }
+
     public void putAnchor(RegionKey regionKey, SettlementAnchor anchor) {
         civGraph.putAnchor(anchor);
         anchorsByRegion.computeIfAbsent(regionKey.asLong(), unused -> new LongArrayList()).add(anchor.id());
@@ -245,6 +280,44 @@ public final class CivWorldState extends SavedData {
 
     public void putEdge(RoadEdge edge) {
         civGraph.putEdge(edge);
+        setDirty();
+    }
+
+    public void replaceRegionPlan(RegionKey regionKey, List<SettlementAnchor> anchors) {
+        clearRegionPlan(regionKey);
+        for (SettlementAnchor anchor : anchors) {
+            civGraph.putAnchor(anchor);
+            anchorsByRegion.computeIfAbsent(regionKey.asLong(), unused -> new LongArrayList()).add(anchor.id());
+        }
+        plannedRegions.add(regionKey.asLong());
+        setDirty();
+    }
+
+    public void clearRegionPlan(RegionKey regionKey) {
+        long packedRegionKey = regionKey.asLong();
+        LongArrayList removedAnchorIds = anchorsByRegion.remove(packedRegionKey);
+        plannedRegions.remove(packedRegionKey);
+
+        if (removedAnchorIds != null) {
+            Set<Long> removedAnchorIdSet = new HashSet<>();
+            for (long anchorId : removedAnchorIds) {
+                civGraph.removeAnchor(anchorId);
+                removedAnchorIdSet.add(anchorId);
+            }
+
+            if (!removedAnchorIdSet.isEmpty()) {
+                List<Long> edgeIdsToRemove = new ArrayList<>();
+                for (RoadEdge edge : civGraph.edgesById().values()) {
+                    if (removedAnchorIdSet.contains(edge.fromAnchorId()) || removedAnchorIdSet.contains(edge.toAnchorId())) {
+                        edgeIdsToRemove.add(edge.id());
+                    }
+                }
+                for (long edgeId : edgeIdsToRemove) {
+                    civGraph.removeEdge(edgeId);
+                }
+            }
+        }
+
         setDirty();
     }
 
