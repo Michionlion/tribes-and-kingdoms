@@ -47,7 +47,7 @@ register Mod Menu API entrypoint in `/Users/saejin/Projects/personal/tribes-and-
 2. Config categories:
 region settings, candidate generation, score weights, tier thresholds, cluster sizing, command defaults, visualization defaults.
 3. Register/load config via Cloth AutoConfig + `Toml4jConfigSerializer` from common init.
-4. Persist file at `<config>/kingdom-placement.toml` (via `Platform.getConfigFolder()`).
+4. Persist file at `<config>/kingdom.toml` (via `Platform.getConfigFolder()`).
 5. Add config facade:
 typed getters + `reload()` + validation/clamping for safe ranges.
 

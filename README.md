@@ -51,8 +51,10 @@ Artifacts:
 ## Dev Command Helpers
 
 - `:fabric:runClient` and `:neoforge:runClient` include dev-only map/pregen mods.
-- Included in Fabric dev runtime: Chunky, Sodium, Xaero's World Map + XaeroLib (`modLocalRuntime`) and Voxy (copied to `fabric/run/mods` before `runClient`).
-- Included in NeoForge dev runtime: Chunky, Xaero's World Map + XaeroLib.
+- Included in Fabric dev runtime: Chunky, Sodium, Distant Horizons, Xaero's World Map + XaeroLib, and Voxy (copied to `fabric/run/mods` before `runClient`).
+- Included in NeoForge dev runtime: Chunky, Xaero's World Map + XaeroLib (`modLocalRuntime`) and Distant Horizons (copied to `neoforge/run/mods` before `runClient`).
+- Voxy is enabled by default on non-macOS hosts and disabled by default on macOS.
+- Override macOS Voxy behavior with `-PkingdomEnableVoxyOnMac=true` (or set `kingdom_enable_voxy_on_macos=true` in `gradle.properties`).
 - `:fabric:runClient` and `:neoforge:runClient` enable a built-in dev command bridge.
 - While the client is running in a singleplayer world, append commands to:
   - `fabric/run/kingdom-dev-commands.txt` (Fabric client run)
@@ -71,22 +73,35 @@ Artifacts:
 
 - Run end-to-end game tests + analysis for both loaders with:
   - `./gradlew analyzeKingdomGeoJson`
+- `analyzeKingdomGeoJson` runs only the analysis-export game test mode (`kingdom.gametest.mode=analysis`) instead of full regression suites.
+- Override mode explicitly with `-PkingdomGameTestMode=full` (or `analysis`) when needed.
+- Default analysis window is 3x3 regions centered at `0,0` (radius `1`).
+- Configure analysis window radius with:
+  - `./gradlew analyzeKingdomGeoJson -PkingdomAnalysisRegionRadius=<radius>`
 - Build artifacts written by the task:
   - `build/geojson-analysis/fabric/kingdom-geojson-visual-review.svg`
   - `build/geojson-analysis/neoforge/kingdom-geojson-visual-review.svg`
   - `build/geojson-analysis/fabric/analysis-summary.json`
   - `build/geojson-analysis/neoforge/analysis-summary.json`
+- Terrain sample cache (height/slope/biome) is written under:
+  - `build/geojson-terrain-cache/fabric/`
+  - `build/geojson-terrain-cache/neoforge/`
+  - Cache keys include seed + dimension + region window, so changing seed/window naturally invalidates prior entries.
+- Terrain export parallelism follows placement config:
+  - `[performance].parallelRegionPlanning` gates parallel terrain export on/off.
+  - `[performance].parallelRegionThreads` controls worker count.
+  - `parallelRegionThreads = 0` means auto (`availableProcessors - 1`).
 - Analyze exported placement snapshots with:
-  - `python scripts/analyze_kingdom_geojson.py <path-to-geojson> --config <path-to-kingdom-placement.toml>`
+  - `python scripts/analyze_kingdom_geojson.py <path-to-geojson> --config <path-to-kingdom.toml>`
 - The script writes:
   - `analysis-summary.json`
   - `kingdom-geojson-visual-review.svg`
-- Example (game test export at region `0,0`):
-  - `python scripts/analyze_kingdom_geojson.py fabric/build/run/gameTest/debug/kingdom/kingdom-command-export-region-0-0.geojson --config fabric/build/run/gameTest/config/kingdom-placement.toml --expect-center 0 0 --expect-radius 0 --out-dir /tmp/kingdom-geojson-review-region0`
-- For a 3x3 region window around `0,0`, export with:
-  - `/kingdom generate around 1 true`
-  - `/kingdom export geojson 1 true kingdom-export-3x3-region-0-0`
-  - then analyze with `--expect-center 0 0 --expect-radius 1`
+- Example (default 3x3 game test export around `0,0`):
+  - `python scripts/analyze_kingdom_geojson.py fabric/build/run/gameTest/debug/kingdom/kingdom-analysis-export.geojson --config fabric/build/run/gameTest/config/kingdom.toml --expect-center 0 0 --expect-radius 1 --out-dir /tmp/kingdom-geojson-review-3x3`
+- For a wider window around `0,0`, export with:
+  - `/kingdom generate around 2 true`
+  - `/kingdom export geojson 2 true kingdom-export-5x5-region-0-0`
+  - then analyze with `--expect-center 0 0 --expect-radius 2`
 
 ## Metadata
 
