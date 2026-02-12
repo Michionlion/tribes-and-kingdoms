@@ -6,25 +6,30 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          1426,
-          483
+          884,
+          1995
         ]
       },
       "properties": {
         "id": -7550730651000290044,
-        "civ_id": -8518489780012204861,
-        "tier": "STONE",
-        "type": "OUTPOST",
+        "civ_id": -7550730651000290044,
+        "tier": "WOOD",
+        "type": "TRIBE",
         "region_x": 0,
         "region_z": 0,
         "accepted": true,
         "is_capital": false,
-        "biome": "minecraft:mangrove_swamp",
+        "biome": "minecraft:old_growth_birch_forest",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
-        "continent_class": "COASTAL"
+        "continent_class": "CONTINENTAL",
+        "score_total": 0.5850050469104469,
+        "score_biome": 1.0,
+        "score_height": 0.953125,
+        "score_slope": 0.19999999999999996,
+        "score_water": 0.3281451876417876
       }
     },
     {
@@ -32,119 +37,15 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          1112,
-          483
+          768,
+          1750
         ]
       },
       "properties": {
         "id": -5344237260338866976,
-        "civ_id": -8518489780012204861,
-        "tier": "STONE",
-        "type": "KINGDOM_TOWN",
-        "region_x": 0,
-        "region_z": 0,
-        "accepted": true,
-        "is_capital": false,
-        "biome": "minecraft:lukewarm_ocean",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
-        "continent_class": "OCEANIC"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          2079,
-          711
-        ]
-      },
-      "properties": {
-        "id": -5226002968549487553,
-        "civ_id": 3715293423664136316,
-        "tier": "STONE",
-        "type": "OUTPOST",
-        "region_x": 0,
-        "region_z": 0,
-        "accepted": true,
-        "is_capital": false,
-        "biome": "minecraft:desert",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
-        "continent_class": "CONTINENTAL"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          259,
-          1739
-        ]
-      },
-      "properties": {
-        "id": -4285032315402921988,
-        "civ_id": -3853681988604647393,
-        "tier": "STONE",
-        "type": "KINGDOM_TOWN",
-        "region_x": 0,
-        "region_z": 0,
-        "accepted": true,
-        "is_capital": false,
-        "biome": "minecraft:taiga",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
-        "continent_class": "CONTINENTAL"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          1223,
-          500
-        ]
-      },
-      "properties": {
-        "id": -3300257763095061382,
-        "civ_id": -8518489780012204861,
-        "tier": "STONE",
-        "type": "KINGDOM_TOWN",
-        "region_x": 0,
-        "region_z": 0,
-        "accepted": true,
-        "is_capital": false,
-        "biome": "minecraft:savanna",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
-        "continent_class": "CONTINENTAL"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          736,
-          1973
-        ]
-      },
-      "properties": {
-        "id": -693977630109007302,
-        "civ_id": 1238913029215444084,
-        "tier": "STONE",
-        "type": "KINGDOM_TOWN",
+        "civ_id": -5344237260338866976,
+        "tier": "WOOD",
+        "type": "TRIBE",
         "region_x": 0,
         "region_z": 0,
         "accepted": true,
@@ -154,38 +55,12 @@
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
-        "continent_class": "CONTINENTAL"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          1247,
-          605
-        ]
-      },
-      "properties": {
-        "id": -185744234660306216,
-        "civ_id": -8518489780012204861,
-        "tier": "STONE",
-        "type": "KINGDOM_CAPITAL",
-        "region_x": 0,
-        "region_z": 0,
-        "accepted": true,
-        "is_capital": true,
-        "biome": "minecraft:savanna",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
         "continent_class": "CONTINENTAL",
-        "score_total": 0.65,
+        "score_total": 0.5892164716760211,
         "score_biome": 1.0,
-        "score_height": 0.0,
-        "score_slope": 1.0,
-        "score_water": 0.0
+        "score_height": 0.96875,
+        "score_slope": 0.19999999999999996,
+        "score_water": 0.3356158867040844
       }
     },
     {
@@ -193,46 +68,20 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          615,
-          1758
+          1452,
+          336
         ]
       },
       "properties": {
-        "id": 886681420333174342,
-        "civ_id": -3853681988604647393,
-        "tier": "STONE",
+        "id": -4285032315402921988,
+        "civ_id": 3304874271957204910,
+        "tier": "IRON",
         "type": "KINGDOM_TOWN",
         "region_x": 0,
         "region_z": 0,
         "accepted": true,
         "is_capital": false,
-        "biome": "minecraft:plains",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
-        "continent_class": "CONTINENTAL"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          2087,
-          427
-        ]
-      },
-      "properties": {
-        "id": 2651832271959889187,
-        "civ_id": 3715293423664136316,
-        "tier": "STONE",
-        "type": "KINGDOM_TOWN",
-        "region_x": 0,
-        "region_z": 0,
-        "accepted": true,
-        "is_capital": false,
-        "biome": "minecraft:desert",
+        "biome": "minecraft:sparse_jungle",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
@@ -250,25 +99,25 @@
         ]
       },
       "properties": {
-        "id": 3304874271957204910,
-        "civ_id": -3853681988604647393,
-        "tier": "STONE",
-        "type": "KINGDOM_CAPITAL",
+        "id": -3300257763095061382,
+        "civ_id": -3300257763095061382,
+        "tier": "WOOD",
+        "type": "TRIBE",
         "region_x": 0,
         "region_z": 0,
         "accepted": true,
-        "is_capital": true,
+        "is_capital": false,
         "biome": "minecraft:forest",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
         "continent_class": "CONTINENTAL",
-        "score_total": 0.65,
+        "score_total": 0.49640397167602107,
         "score_biome": 1.0,
-        "score_height": 0.0,
-        "score_slope": 1.0,
-        "score_water": 0.0
+        "score_height": 0.75,
+        "score_slope": 0.0,
+        "score_water": 0.3356158867040844
       }
     },
     {
@@ -276,20 +125,20 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          751,
-          2038
+          1014,
+          707
         ]
       },
       "properties": {
-        "id": 3457178171650905301,
-        "civ_id": 1238913029215444084,
+        "id": -185744234660306216,
+        "civ_id": 3304874271957204910,
         "tier": "STONE",
-        "type": "KINGDOM_TOWN",
+        "type": "OUTPOST",
         "region_x": 0,
         "region_z": 0,
         "accepted": true,
         "is_capital": false,
-        "biome": "minecraft:forest",
+        "biome": "minecraft:savanna",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
@@ -302,87 +151,56 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          884,
-          1995
+          1405,
+          710
         ]
       },
       "properties": {
-        "id": 4552312545096658222,
-        "civ_id": 1238913029215444084,
-        "tier": "STONE",
-        "type": "KINGDOM_CAPITAL",
-        "region_x": 0,
-        "region_z": 0,
-        "accepted": true,
-        "is_capital": true,
-        "biome": "minecraft:old_growth_birch_forest",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
-        "continent_class": "CONTINENTAL",
-        "score_total": 0.65,
-        "score_biome": 1.0,
-        "score_height": 0.0,
-        "score_slope": 1.0,
-        "score_water": 0.0
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          2022,
-          534
-        ]
-      },
-      "properties": {
-        "id": 5061990150331280373,
-        "civ_id": 3715293423664136316,
-        "tier": "STONE",
-        "type": "KINGDOM_CAPITAL",
-        "region_x": 0,
-        "region_z": 0,
-        "accepted": true,
-        "is_capital": true,
-        "biome": "minecraft:river",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
-        "continent_class": "COASTAL",
-        "score_total": 0.5900000000000001,
-        "score_biome": 0.85,
-        "score_height": 0.0,
-        "score_slope": 1.0,
-        "score_water": 0.0
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          2189,
-          682
-        ]
-      },
-      "properties": {
-        "id": 5117194425902231246,
-        "civ_id": 3715293423664136316,
+        "id": 886681420333174342,
+        "civ_id": 3304874271957204910,
         "tier": "STONE",
         "type": "KINGDOM_TOWN",
         "region_x": 0,
         "region_z": 0,
         "accepted": true,
         "is_capital": false,
-        "biome": "minecraft:river",
+        "biome": "minecraft:savanna",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
-        "continent_class": "COASTAL"
+        "continent_class": "CONTINENTAL"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1247,
+          605
+        ]
+      },
+      "properties": {
+        "id": 3304874271957204910,
+        "civ_id": 3304874271957204910,
+        "tier": "IRON",
+        "type": "KINGDOM_CAPITAL",
+        "region_x": 0,
+        "region_z": 0,
+        "accepted": true,
+        "is_capital": true,
+        "biome": "minecraft:savanna",
+        "continent": "0,0",
+        "continent_x": 0,
+        "continent_z": 0,
+        "continent_block_span": 8192,
+        "continent_class": "CONTINENTAL",
+        "score_total": 0.7068727216760211,
+        "score_biome": 1.0,
+        "score_height": 0.953125,
+        "score_slope": 0.6,
+        "score_water": 0.3356158867040844
       }
     },
     {
@@ -398,19 +216,47 @@
         "accepted": false,
         "region_x": 0,
         "region_z": 0,
-        "tier": "WOOD",
+        "tier": "NETHERITE",
         "biome": "minecraft:lukewarm_ocean",
-        "rejection_reason": "score_below_threshold",
+        "rejection_reason": "biome_oceanic_or_coastal",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
         "continent_class": "OCEANIC",
-        "score_total": 0.51,
+        "score_total": 0.8551562500000001,
         "score_biome": 0.65,
-        "score_height": 0.0,
+        "score_height": 0.734375,
         "score_slope": 1.0,
-        "score_water": 0.0
+        "score_water": 1.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          2022,
+          534
+        ]
+      },
+      "properties": {
+        "accepted": false,
+        "region_x": 0,
+        "region_z": 0,
+        "tier": "NETHERITE",
+        "biome": "minecraft:river",
+        "rejection_reason": "biome_oceanic_or_coastal",
+        "continent": "0,0",
+        "continent_x": 0,
+        "continent_z": 0,
+        "continent_block_span": 8192,
+        "continent_class": "COASTAL",
+        "score_total": 0.91515625,
+        "score_biome": 0.85,
+        "score_height": 0.734375,
+        "score_slope": 1.0,
+        "score_water": 1.0
       }
     },
     {
@@ -426,19 +272,19 @@
         "accepted": false,
         "region_x": 0,
         "region_z": 0,
-        "tier": "WOOD",
+        "tier": "NETHERITE",
         "biome": "minecraft:ocean",
-        "rejection_reason": "score_below_threshold",
+        "rejection_reason": "biome_oceanic_or_coastal",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
         "continent_class": "OCEANIC",
-        "score_total": 0.51,
+        "score_total": 0.8551562500000001,
         "score_biome": 0.65,
-        "score_height": 0.0,
+        "score_height": 0.734375,
         "score_slope": 1.0,
-        "score_water": 0.0
+        "score_water": 1.0
       }
     },
     {
@@ -462,10 +308,10 @@
         "continent_z": 0,
         "continent_block_span": 8192,
         "continent_class": "CONTINENTAL",
-        "score_total": 0.33,
+        "score_total": 0.42656249999999996,
         "score_biome": 0.2,
-        "score_height": 0.0,
-        "score_slope": 1.0,
+        "score_height": 0.84375,
+        "score_slope": 0.8,
         "score_water": 0.0
       }
     },
@@ -490,10 +336,10 @@
         "continent_z": 0,
         "continent_block_span": 8192,
         "continent_class": "CONTINENTAL",
-        "score_total": 0.33,
+        "score_total": 0.20296875,
         "score_biome": 0.2,
-        "score_height": 0.0,
-        "score_slope": 1.0,
+        "score_height": 0.953125,
+        "score_slope": 0.0,
         "score_water": 0.0
       }
     },
@@ -510,47 +356,19 @@
         "accepted": false,
         "region_x": 0,
         "region_z": 0,
-        "tier": "WOOD",
+        "tier": "NETHERITE",
         "biome": "minecraft:warm_ocean",
-        "rejection_reason": "score_below_threshold",
+        "rejection_reason": "biome_oceanic_or_coastal",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
         "continent_class": "OCEANIC",
-        "score_total": 0.51,
+        "score_total": 0.8551562500000001,
         "score_biome": 0.65,
-        "score_height": 0.0,
+        "score_height": 0.734375,
         "score_slope": 1.0,
-        "score_water": 0.0
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          768,
-          1750
-        ]
-      },
-      "properties": {
-        "accepted": false,
-        "region_x": 0,
-        "region_z": 0,
-        "tier": "STONE",
-        "biome": "minecraft:forest",
-        "rejection_reason": "spacing_conflict",
-        "continent": "0,0",
-        "continent_x": 0,
-        "continent_z": 0,
-        "continent_block_span": 8192,
-        "continent_class": "CONTINENTAL",
-        "score_total": 0.65,
-        "score_biome": 1.0,
-        "score_height": 0.0,
-        "score_slope": 1.0,
-        "score_water": 0.0
+        "score_water": 1.0
       }
     },
     {
@@ -566,19 +384,19 @@
         "accepted": false,
         "region_x": 0,
         "region_z": 0,
-        "tier": "WOOD",
+        "tier": "DIAMOND",
         "biome": "minecraft:swamp",
-        "rejection_reason": "score_below_threshold",
+        "rejection_reason": "biome_oceanic_or_coastal",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
         "continent_class": "COASTAL",
-        "score_total": 0.47000000000000003,
+        "score_total": 0.76515625,
         "score_biome": 0.55,
-        "score_height": 0.0,
-        "score_slope": 1.0,
-        "score_water": 0.0
+        "score_height": 0.734375,
+        "score_slope": 0.8,
+        "score_water": 1.0
       }
     },
     {
@@ -594,19 +412,19 @@
         "accepted": false,
         "region_x": 0,
         "region_z": 0,
-        "tier": "WOOD",
+        "tier": "NETHERITE",
         "biome": "minecraft:lukewarm_ocean",
-        "rejection_reason": "score_below_threshold",
+        "rejection_reason": "biome_oceanic_or_coastal",
         "continent": "0,0",
         "continent_x": 0,
         "continent_z": 0,
         "continent_block_span": 8192,
         "continent_class": "OCEANIC",
-        "score_total": 0.51,
+        "score_total": 0.8551562500000001,
         "score_biome": 0.65,
-        "score_height": 0.0,
+        "score_height": 0.734375,
         "score_slope": 1.0,
-        "score_water": 0.0
+        "score_water": 1.0
       }
     }
   ]

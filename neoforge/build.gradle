@@ -36,9 +36,18 @@ configurations {
     gameTestImplementation.extendsFrom implementation
     gameTestCompileOnly.extendsFrom compileOnly
     gameTestRuntimeOnly.extendsFrom runtimeOnly
+
+    // External dev mods copied into run/mods; keeps server-side game tests isolated.
+    externalDevClientMods {
+        canBeResolved = true
+        canBeConsumed = false
+    }
 }
 
 loom {
+    def analysisRadius = (rootProject.findProperty("kingdomAnalysisRegionRadius") ?: rootProject.kingdom_analysis_region_radius).toString()
+    def terrainCacheDir = rootProject.layout.buildDirectory.dir("geojson-terrain-cache/neoforge").get().asFile.absolutePath
+    def gameTestMode = (rootProject.ext.has("kingdomGameTestMode") ? rootProject.ext.kingdomGameTestMode : "full").toString()
     runs {
         ciGameTestServer {
             environment("server")
@@ -50,6 +59,9 @@ loom {
             vmArg("-Dneoforge.enabledGameTestNamespaces=kingdom")
             vmArg("-Dforge.enabledGameTestNamespaces=kingdom")
             vmArg("-Dkingdom.gametest.seed=${rootProject.kingdom_gametest_seed}")
+            vmArg("-Dkingdom.gametest.mode=${gameTestMode}")
+            vmArg("-Dkingdom.gametest.analysisRadius=${analysisRadius}")
+            vmArg("-Dkingdom.gametest.terrainCacheDir=${terrainCacheDir}")
         }
     }
 }
@@ -86,6 +98,7 @@ dependencies {
     modLocalRuntime "maven.modrinth:chunky:$rootProject.chunky_neoforge_modrinth_version"
     modLocalRuntime "xaero.lib:xaerolib-neoforge-$rootProject.minecraft_version:$rootProject.xaero_lib_neoforge_version"
     modLocalRuntime "xaero.map:xaeroworldmap-neoforge-$rootProject.minecraft_version:$rootProject.xaero_world_map_neoforge_version"
+    externalDevClientMods "maven.modrinth:distanthorizons:$rootProject.distant_horizons_modrinth_version"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
     shadowBundle project(path: ":common", configuration: "transformProductionNeoForge")
@@ -106,4 +119,13 @@ shadowJar {
 
 remapJar {
     inputFile.set shadowJar.archiveFile
+}
+
+def copyNeoForgeExternalDevMods = tasks.register("copyNeoForgeExternalDevMods", Copy) {
+    from(configurations.externalDevClientMods)
+    into(layout.projectDirectory.dir("run/mods"))
+}
+
+tasks.matching { it.name == "runClient" }.configureEach {
+    dependsOn(copyNeoForgeExternalDevMods)
 }

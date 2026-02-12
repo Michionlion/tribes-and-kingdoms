@@ -1,6 +1,7 @@
 package com.michionlion.neoforge.gametest;
 
 import com.mojang.serialization.MapCodec;
+import com.mojang.logging.LogUtils;
 import com.michionlion.kingdom.civ.model.RegionKey;
 import com.michionlion.kingdom.civ.state.CivWorldState;
 import net.minecraft.commands.CommandSourceStack;
@@ -25,21 +26,34 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.function.Consumer;
+import org.slf4j.Logger;
 
 public final class NeoForgeWorldBootAndTraversalTests {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final int COMMAND_TEST_SETUP_TICKS = 20;
     private static final int COMMAND_TEST_MAX_TICKS = 200;
 
     private static final Identifier COMMAND_TEST_ID = Identifier.parse("kingdom:kcmd_export_snapshot");
+    private static final Identifier ANALYSIS_TEST_ID = Identifier.parse("kingdom:kcmd_export_analysis_window");
     private static final Identifier TEST_STRUCTURE_ID = Identifier.parse("minecraft:empty");
     private static final Identifier TEST_ENVIRONMENT_ID = Identifier.parse("kingdom:open_world");
     private static final String COMMAND_SNAPSHOT_FILENAME = "kingdom-command-export-region-0-0.geojson";
     private static final String COMMAND_SNAPSHOT_RESOURCE = "kingdom/gametest/snapshots/" + COMMAND_SNAPSHOT_FILENAME;
+    private static final String ANALYSIS_EXPORT_FILENAME = "kingdom-analysis-export.geojson";
+    private static final int ANALYSIS_REGION_RADIUS = Integer.getInteger("kingdom.gametest.analysisRadius", 1);
+    private static final String GAME_TEST_MODE = System.getProperty("kingdom.gametest.mode", "full")
+        .toLowerCase(java.util.Locale.ROOT);
 
     private NeoForgeWorldBootAndTraversalTests() {
     }
 
     public static void registerGameTests(RegisterGameTestsEvent event) {
+        LOGGER.info(
+            "[kingdom] neoforge gametest mode='{}' analysis_only={}",
+            GAME_TEST_MODE,
+            isAnalysisOnlyMode()
+        );
+
         Holder<TestEnvironmentDefinition> environment = event.registerEnvironment(
             TEST_ENVIRONMENT_ID,
             new TestEnvironmentDefinition.AllOf(List.of())
@@ -58,10 +72,24 @@ public final class NeoForgeWorldBootAndTraversalTests {
             true
         );
 
+        if (isAnalysisOnlyMode()) {
+            event.registerTest(
+                ANALYSIS_TEST_ID,
+                new DirectGameTestInstance(commandTestData, NeoForgeWorldBootAndTraversalTests::kingdomCommandsExportAnalysisWindow)
+            );
+            LOGGER.info("[kingdom] neoforge registered tests: {}", ANALYSIS_TEST_ID);
+            return;
+        }
+
         event.registerTest(
             COMMAND_TEST_ID,
             new DirectGameTestInstance(commandTestData, NeoForgeWorldBootAndTraversalTests::kingdomCommandsGenerateAndExportSnapshot)
         );
+        event.registerTest(
+            ANALYSIS_TEST_ID,
+            new DirectGameTestInstance(commandTestData, NeoForgeWorldBootAndTraversalTests::kingdomCommandsExportAnalysisWindow)
+        );
+        LOGGER.info("[kingdom] neoforge registered tests: {}, {}", COMMAND_TEST_ID, ANALYSIS_TEST_ID);
     }
 
     private static void kingdomCommandsGenerateAndExportSnapshot(GameTestHelper helper) {
@@ -81,12 +109,7 @@ public final class NeoForgeWorldBootAndTraversalTests {
             Files.createDirectories(outputPath.getParent());
             Files.deleteIfExists(outputPath);
 
-            CommandSourceStack source = level.getServer()
-                .createCommandSourceStack()
-                .withLevel(level)
-                .withPosition(new Vec3(0.5D, 90.0D, 0.5D))
-                .withMaximumPermission(PermissionSet.ALL_PERMISSIONS)
-                .withSuppressedOutput();
+            CommandSourceStack source = createCommandSource(level);
 
             runCommand(level, source, "kingdom config show");
             runCommand(level, source, "kingdom config reload");
@@ -131,8 +154,76 @@ public final class NeoForgeWorldBootAndTraversalTests {
         }
     }
 
+    private static void kingdomCommandsExportAnalysisWindow(GameTestHelper helper) {
+        if (helper.getLevel() == null) {
+            helper.fail("Server level is null during analysis window test startup.");
+            return;
+        }
+
+        if (runAnalysisExport(helper, helper.getLevel())) {
+            helper.succeed();
+        }
+    }
+
+    private static boolean runAnalysisExport(GameTestHelper helper, ServerLevel level) {
+        try {
+            Path outputPath = Path.of("debug", "kingdom", ANALYSIS_EXPORT_FILENAME);
+            Files.createDirectories(outputPath.getParent());
+            Files.deleteIfExists(outputPath);
+
+            CommandSourceStack source = createCommandSource(level);
+            runCommand(level, source, "kingdom config reload");
+            runCommand(level, source, "kingdom generate around " + ANALYSIS_REGION_RADIUS + " true");
+            runCommand(level, source, "kingdom summary " + ANALYSIS_REGION_RADIUS);
+            runCommand(level, source, "kingdom export geojson " + ANALYSIS_REGION_RADIUS + " true kingdom-analysis-export");
+
+            CivWorldState state = CivWorldState.get(level);
+            int expectedRegionCount = expectedRegionCount(ANALYSIS_REGION_RADIUS);
+            int plannedRegionCount = 0;
+            for (int dx = -ANALYSIS_REGION_RADIUS; dx <= ANALYSIS_REGION_RADIUS; dx++) {
+                for (int dz = -ANALYSIS_REGION_RADIUS; dz <= ANALYSIS_REGION_RADIUS; dz++) {
+                    if (state.isRegionPlanned(new RegionKey(dx, dz))) {
+                        plannedRegionCount++;
+                    }
+                }
+            }
+
+            if (plannedRegionCount != expectedRegionCount) {
+                helper.fail(
+                    "Expected fully planned " + expectedRegionCount + " regions for analysis radius "
+                        + ANALYSIS_REGION_RADIUS + ", got " + plannedRegionCount + "."
+                );
+                return false;
+            }
+
+            if (!Files.isRegularFile(outputPath)) {
+                helper.fail("Expected analysis geojson at " + outputPath.toAbsolutePath());
+                return false;
+            }
+
+            return true;
+        } catch (Exception error) {
+            helper.fail("Analysis export test failed: " + error.getMessage());
+            return false;
+        }
+    }
+
     private static void runCommand(ServerLevel level, CommandSourceStack source, String command) {
         level.getServer().getCommands().performPrefixedCommand(source, command);
+    }
+
+    private static CommandSourceStack createCommandSource(ServerLevel level) {
+        return level.getServer()
+            .createCommandSourceStack()
+            .withLevel(level)
+            .withPosition(new Vec3(0.5D, 90.0D, 0.5D))
+            .withMaximumPermission(PermissionSet.ALL_PERMISSIONS)
+            .withSuppressedOutput();
+    }
+
+    private static int expectedRegionCount(int radius) {
+        int span = (radius * 2) + 1;
+        return span * span;
     }
 
     private static String normalize(String content) {
@@ -156,6 +247,10 @@ public final class NeoForgeWorldBootAndTraversalTests {
             builder.append(String.format(java.util.Locale.ROOT, "%02x", b));
         }
         return builder.toString();
+    }
+
+    private static boolean isAnalysisOnlyMode() {
+        return "analysis".equals(GAME_TEST_MODE);
     }
 
     private static final class DirectGameTestInstance extends GameTestInstance {

@@ -31,6 +31,25 @@ subprojects {
         // for more information about repositories.
     }
 
+    configurations.configureEach {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == "dev.architectury" && details.requested.name == "architectury-transformer") {
+                details.useVersion(rootProject.architectury_transformer_version)
+                details.because("Use latest transformer runtime to avoid known Gradle execution-time deprecations.")
+            }
+        }
+    }
+
+    // Work around Architectury task action calling Task.project at execution time (Gradle deprecation).
+    tasks.withType(dev.architectury.plugin.PrepareArchitecturyTransformer).configureEach {
+        def projectRef = project
+        def architecturyExtension = projectRef.extensions.getByType(dev.architectury.plugin.ArchitectPluginExtension)
+        actions.clear()
+        doLast {
+            architecturyExtension.prepareTransformer()
+        }
+    }
+
     loom {
         silentMojangMappingsLicense()
     }
@@ -71,28 +90,75 @@ subprojects {
             // retrieving dependencies.
         }
     }
+
+    tasks.named("clean").configure {
+        doLast {
+            def runDir = layout.projectDirectory.dir("run").asFile
+            if (runDir.exists()) {
+                delete(fileTree(runDir) {
+                    include("**/kingdom.toml")
+                    include("**/kingdom-placement.toml")
+                })
+            }
+
+            def buildRunDir = layout.buildDirectory.dir("run").get().asFile
+            if (buildRunDir.exists()) {
+                delete(fileTree(buildRunDir) {
+                    include("**/kingdom.toml")
+                    include("**/kingdom-placement.toml")
+                })
+            }
+        }
+    }
 }
 
 def kingdomGeoJsonAnalyzerScript = rootProject.file("scripts/analyze_kingdom_geojson.py")
+def kingdomAnalysisRegionRadius = ((findProperty("kingdomAnalysisRegionRadius") ?: rootProject.kingdom_analysis_region_radius) as String).toInteger()
+def isAnalyzeGeoJsonRequested = gradle.startParameter.taskNames.any { taskName ->
+    def requested = taskName.tokenize(":").last()
+    requested == "analyzeKingdomGeoJson"
+        || requested == "fabricAnalyzeGeoJson"
+        || requested == "neoForgeAnalyzeGeoJson"
+        // Support Gradle task-name abbreviation usage: `./gradlew analyze`
+        || requested == "analyze"
+}
+def configuredGameTestMode = findProperty("kingdomGameTestMode") ?: findProperty("kingdom_gametest_mode")
+ext.kingdomGameTestMode = ((configuredGameTestMode ?: (isAnalyzeGeoJsonRequested ? "analysis" : "full")) as String).trim()
+
+def parseTaskPath = { String absoluteTaskPath ->
+    def tokens = absoluteTaskPath.split(":").findAll { !it.isBlank() }
+    if (tokens.size() < 2) {
+        throw new GradleException("Expected fully qualified task path like ':project:task', got '${absoluteTaskPath}'.")
+    }
+
+    def taskName = tokens.last()
+    def projectPath = ":" + tokens.subList(0, tokens.size() - 1).join(":")
+    [projectPath, taskName]
+}
 
 def registerKingdomGeoJsonAnalysisTask = { String taskName, String runTaskPath, String loaderName, String geoJsonPath, String configPath ->
-    tasks.register(taskName) {
+    def analysisTask = tasks.register(taskName) {
         group = "verification"
         description = "Run ${loaderName} kingdom GeoJSON analysis and write SVG/summary under build/geojson-analysis."
-        dependsOn(runTaskPath)
+        mustRunAfter(runTaskPath)
 
         def analysisOutDir = layout.buildDirectory.dir("geojson-analysis/${loaderName}")
         def geoJsonFile = rootProject.file(geoJsonPath)
         def configFile = rootProject.file(configPath)
 
-        inputs.file(geoJsonFile)
-        inputs.file(configFile)
         inputs.file(kingdomGeoJsonAnalyzerScript)
+        inputs.property("analysisRegionRadius", kingdomAnalysisRegionRadius)
 
         doLast {
             if (!kingdomGeoJsonAnalyzerScript.isFile()) throw new GradleException("Missing analyzer script: ${kingdomGeoJsonAnalyzerScript}")
-            if (!geoJsonFile.isFile()) throw new GradleException("Missing loader GeoJSON export: ${geoJsonFile}")
-            if (!configFile.isFile()) throw new GradleException("Missing loader config file: ${configFile}")
+            if (!geoJsonFile.isFile()) {
+                logger.warn("Skipping ${name}: missing loader GeoJSON export at ${geoJsonFile}.")
+                return
+            }
+            if (!configFile.isFile()) {
+                logger.warn("Skipping ${name}: missing loader config file at ${configFile}.")
+                return
+            }
 
             def outDirFile = analysisOutDir.get().asFile
             outDirFile.mkdirs()
@@ -103,34 +169,42 @@ def registerKingdomGeoJsonAnalysisTask = { String taskName, String runTaskPath, 
                     kingdomGeoJsonAnalyzerScript.absolutePath,
                     geoJsonFile.absolutePath,
                     "--expect-center", "0", "0",
-                    "--expect-radius", "0",
+                    "--expect-radius", kingdomAnalysisRegionRadius.toString(),
                     "--config", configFile.absolutePath,
                     "--out-dir", outDirFile.absolutePath
                 )
             }
         }
     }
+
+    def (runProjectPath, runTaskName) = parseTaskPath(runTaskPath)
+    project(runProjectPath).tasks.matching { it.name == runTaskName }.configureEach {
+        finalizedBy(analysisTask)
+    }
 }
+
+def fabricGameTestTaskPath = ":fabric:runGameTest"
+def neoForgeGameTestTaskPath = ":neoforge:runCiGameTestServer"
 
 registerKingdomGeoJsonAnalysisTask(
     "fabricAnalyzeGeoJson",
-    ":fabric:runGameTest",
+    fabricGameTestTaskPath,
     "fabric",
-    "fabric/build/run/gameTest/debug/kingdom/kingdom-command-export-region-0-0.geojson",
-    "fabric/build/run/gameTest/config/kingdom-placement.toml"
+    "fabric/build/run/gameTest/debug/kingdom/kingdom-analysis-export.geojson",
+    "fabric/build/run/gameTest/config/kingdom.toml"
 )
 
 registerKingdomGeoJsonAnalysisTask(
     "neoForgeAnalyzeGeoJson",
-    ":neoforge:runCiGameTestServer",
+    neoForgeGameTestTaskPath,
     "neoforge",
-    "neoforge/run/gametest-neoforge/debug/kingdom/kingdom-command-export-region-0-0.geojson",
-    "neoforge/run/gametest-neoforge/config/kingdom-placement.toml"
+    "neoforge/run/gametest-neoforge/debug/kingdom/kingdom-analysis-export.geojson",
+    "neoforge/run/gametest-neoforge/config/kingdom.toml"
 )
 
 task analyzeKingdomGeoJson {
     group = "verification"
-    description = "Run Fabric + NeoForge game tests and write GeoJSON analysis artifacts under build/geojson-analysis."
-    dependsOn "fabricAnalyzeGeoJson"
-    dependsOn "neoForgeAnalyzeGeoJson"
+    description = "Run Fabric + NeoForge analysis-export game tests and write GeoJSON analysis artifacts under build/geojson-analysis."
+    dependsOn fabricGameTestTaskPath
+    dependsOn neoForgeGameTestTaskPath
 }

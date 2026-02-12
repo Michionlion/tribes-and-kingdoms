@@ -44,6 +44,10 @@ public final class FabricWorldBootAndTraversalTests {
     private static final int MIN_UNIQUE_GENERATED_CHUNKS = 64;
     private static final String COMMAND_SNAPSHOT_FILENAME = "kingdom-command-export-region-0-0.geojson";
     private static final String COMMAND_SNAPSHOT_RESOURCE = "kingdom/gametest/snapshots/" + COMMAND_SNAPSHOT_FILENAME;
+    private static final String ANALYSIS_EXPORT_FILENAME = "kingdom-analysis-export.geojson";
+    private static final int ANALYSIS_REGION_RADIUS = Integer.getInteger("kingdom.gametest.analysisRadius", 1);
+    private static final String GAME_TEST_MODE = System.getProperty("kingdom.gametest.mode", "full")
+        .toLowerCase(java.util.Locale.ROOT);
 
     @GameTest(
         structure = "kingdom:empty",
@@ -55,7 +59,13 @@ public final class FabricWorldBootAndTraversalTests {
         requiredSuccesses = 1,
         skyAccess = true
     )
+    @SuppressWarnings("removal")
     public void worldBootAndHybridConcentricTraversal(GameTestHelper helper) {
+        if (isAnalysisOnlyMode()) {
+            helper.succeed();
+            return;
+        }
+
         if (helper.getLevel() == null) {
             helper.fail("Server level is null during game test startup.");
             return;
@@ -123,6 +133,11 @@ public final class FabricWorldBootAndTraversalTests {
         skyAccess = true
     )
     public void kingdomCommandsGenerateAndExportSnapshot(GameTestHelper helper) {
+        if (isAnalysisOnlyMode()) {
+            helper.succeed();
+            return;
+        }
+
         if (helper.getLevel() == null) {
             helper.fail("Server level is null during command test startup.");
             return;
@@ -135,12 +150,7 @@ public final class FabricWorldBootAndTraversalTests {
                 Files.createDirectories(outputPath.getParent());
                 Files.deleteIfExists(outputPath);
 
-                CommandSourceStack source = level.getServer()
-                    .createCommandSourceStack()
-                    .withLevel(level)
-                    .withPosition(new Vec3(0.5D, 90.0D, 0.5D))
-                    .withMaximumPermission(PermissionSet.ALL_PERMISSIONS)
-                    .withSuppressedOutput();
+                CommandSourceStack source = createCommandSource(level);
 
                 runCommand(level, source, "kingdom config show");
                 runCommand(level, source, "kingdom config reload");
@@ -185,6 +195,66 @@ public final class FabricWorldBootAndTraversalTests {
         });
     }
 
+    @GameTest(
+        structure = "kingdom:empty",
+        setupTicks = 20,
+        maxTicks = 360,
+        required = true,
+        manualOnly = false,
+        maxAttempts = 1,
+        requiredSuccesses = 1,
+        skyAccess = true
+    )
+    public void kingdomCommandsExportAnalysisWindow(GameTestHelper helper) {
+        if (helper.getLevel() == null) {
+            helper.fail("Server level is null during analysis window test startup.");
+            return;
+        }
+
+        helper.runAtTickTime(1L, () -> {
+            try {
+                ServerLevel level = helper.getLevel();
+                Path outputPath = Path.of("debug", "kingdom", ANALYSIS_EXPORT_FILENAME);
+                Files.createDirectories(outputPath.getParent());
+                Files.deleteIfExists(outputPath);
+
+                CommandSourceStack source = createCommandSource(level);
+                runCommand(level, source, "kingdom config reload");
+                runCommand(level, source, "kingdom generate around " + ANALYSIS_REGION_RADIUS + " true");
+                runCommand(level, source, "kingdom summary " + ANALYSIS_REGION_RADIUS);
+                runCommand(level, source, "kingdom export geojson " + ANALYSIS_REGION_RADIUS + " true kingdom-analysis-export");
+
+                CivWorldState state = CivWorldState.get(level);
+                int expectedRegionCount = expectedRegionCount(ANALYSIS_REGION_RADIUS);
+                int plannedRegionCount = 0;
+                for (int dx = -ANALYSIS_REGION_RADIUS; dx <= ANALYSIS_REGION_RADIUS; dx++) {
+                    for (int dz = -ANALYSIS_REGION_RADIUS; dz <= ANALYSIS_REGION_RADIUS; dz++) {
+                        if (state.isRegionPlanned(new RegionKey(dx, dz))) {
+                            plannedRegionCount++;
+                        }
+                    }
+                }
+
+                if (plannedRegionCount != expectedRegionCount) {
+                    helper.fail(
+                        "Expected fully planned " + expectedRegionCount + " regions for analysis radius "
+                            + ANALYSIS_REGION_RADIUS + ", got " + plannedRegionCount + "."
+                    );
+                    return;
+                }
+
+                if (!Files.isRegularFile(outputPath)) {
+                    helper.fail("Expected analysis geojson at " + outputPath.toAbsolutePath());
+                    return;
+                }
+
+                helper.succeed();
+            } catch (Exception error) {
+                helper.fail("Analysis export test failed: " + error.getMessage());
+            }
+        });
+    }
+
     private static boolean validateCompletion(
         GameTestHelper helper,
         ServerPlayer player,
@@ -218,6 +288,10 @@ public final class FabricWorldBootAndTraversalTests {
         }
 
         return true;
+    }
+
+    private static boolean isAnalysisOnlyMode() {
+        return "analysis".equals(GAME_TEST_MODE);
     }
 
     private static boolean movePlayerTowards(ServerPlayer player, BlockPos target, boolean innerRing, double travelY) {
@@ -288,6 +362,20 @@ public final class FabricWorldBootAndTraversalTests {
 
     private static String formatDouble(double value) {
         return String.format(java.util.Locale.ROOT, "%.2f", value);
+    }
+
+    private static CommandSourceStack createCommandSource(ServerLevel level) {
+        return level.getServer()
+            .createCommandSourceStack()
+            .withLevel(level)
+            .withPosition(new Vec3(0.5D, 90.0D, 0.5D))
+            .withMaximumPermission(PermissionSet.ALL_PERMISSIONS)
+            .withSuppressedOutput();
+    }
+
+    private static int expectedRegionCount(int radius) {
+        int span = (radius * 2) + 1;
+        return span * span;
     }
 
     private static void runCommand(ServerLevel level, CommandSourceStack source, String command) {

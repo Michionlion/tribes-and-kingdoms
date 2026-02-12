@@ -2,6 +2,12 @@ plugins {
     id "com.gradleup.shadow"
 }
 
+def isMacOs = System.getProperty("os.name").toLowerCase().contains("mac")
+def enableVoxyOnMacOs = (rootProject.findProperty("kingdomEnableVoxyOnMac")
+    ?: rootProject.findProperty("kingdom_enable_voxy_on_macos")
+    ?: "false").toString().toBoolean()
+def includeVoxy = !isMacOs || enableVoxyOnMacOs
+
 architectury {
     platformSetupLoomIde()
     fabric()
@@ -75,9 +81,12 @@ dependencies {
     // Dev-only mods for runClient; not bundled in release jars.
     externalDevClientMods "maven.modrinth:chunky:$rootProject.chunky_fabric_modrinth_version"
     externalDevClientMods "maven.modrinth:sodium:$rootProject.sodium_fabric_modrinth_version"
+    externalDevClientMods "maven.modrinth:distanthorizons:$rootProject.distant_horizons_modrinth_version"
     externalDevClientMods "xaero.lib:xaerolib-fabric-$rootProject.minecraft_version:$rootProject.xaero_lib_fabric_version"
     externalDevClientMods "xaero.map:xaeroworldmap-fabric-$rootProject.minecraft_version:$rootProject.xaero_world_map_fabric_version"
-    externalDevClientMods "maven.modrinth:voxy:$rootProject.voxy_fabric_modrinth_version"
+    if (includeVoxy) {
+        externalDevClientMods "maven.modrinth:voxy:$rootProject.voxy_fabric_modrinth_version"
+    }
 
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
     shadowBundle project(path: ":common", configuration: "transformProductionFabric")
@@ -101,8 +110,16 @@ remapJar {
 }
 
 def copyFabricExternalDevMods = tasks.register("copyFabricExternalDevMods", Copy) {
+    def runModsDir = layout.projectDirectory.dir("run/mods")
     from(configurations.externalDevClientMods)
-    into(layout.projectDirectory.dir("run/mods"))
+    into(runModsDir)
+    doFirst {
+        if (!includeVoxy) {
+            delete(fileTree(runModsDir.asFile) {
+                include "voxy-*.jar"
+            })
+        }
+    }
 }
 
 tasks.matching { it.name == "runClient" }.configureEach {
@@ -110,5 +127,11 @@ tasks.matching { it.name == "runClient" }.configureEach {
 }
 
 tasks.matching { it.name == "runGameTest" }.configureEach {
+    def gameTestMode = (rootProject.ext.has("kingdomGameTestMode") ? rootProject.ext.kingdomGameTestMode : "full").toString()
     jvmArgs("-Dkingdom.gametest.seed=${rootProject.kingdom_gametest_seed}")
+    def analysisRadius = (rootProject.findProperty("kingdomAnalysisRegionRadius") ?: rootProject.kingdom_analysis_region_radius).toString()
+    def terrainCacheDir = rootProject.layout.buildDirectory.dir("geojson-terrain-cache/fabric").get().asFile.absolutePath
+    jvmArgs("-Dkingdom.gametest.mode=${gameTestMode}")
+    jvmArgs("-Dkingdom.gametest.analysisRadius=${analysisRadius}")
+    jvmArgs("-Dkingdom.gametest.terrainCacheDir=${terrainCacheDir}")
 }
