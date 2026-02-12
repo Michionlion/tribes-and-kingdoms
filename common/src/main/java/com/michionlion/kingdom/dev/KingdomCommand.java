@@ -194,6 +194,10 @@ public final class KingdomCommand {
                 + " max=" + config.satelliteMaxDistanceBlocks()
                 + " visualize.radius=" + config.defaultVisualizationRadiusBlocks()
         ), false);
+        source.sendSuccess(() -> Component.literal(
+            "[kingdom] performance parallel_region_planning=" + config.parallelRegionPlanning()
+                + " parallel_region_threads=" + config.parallelRegionThreads()
+        ), false);
 
         return 1;
     }
@@ -217,7 +221,8 @@ public final class KingdomCommand {
                     + "region.size, region.min_spacing, candidate.cell_size, candidate.max_per_region, candidate.water_radius, "
                     + "weights.biome, weights.height, weights.slope, weights.water, "
                     + "thresholds.wood, thresholds.stone, thresholds.iron, thresholds.diamond, thresholds.netherite, "
-                    + "cluster.min_satellite_distance, cluster.max_satellite_distance"
+                    + "cluster.min_satellite_distance, cluster.max_satellite_distance, "
+                    + "performance.parallel_region_planning, performance.parallel_region_threads"
             ));
             return 0;
         }

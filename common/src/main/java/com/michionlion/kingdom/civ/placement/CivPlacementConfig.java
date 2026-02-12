@@ -41,7 +41,9 @@ public record CivPlacementConfig(
     int defaultExportRegionRadius,
     int defaultVisualizationRadiusBlocks,
     int visualizationParticlesPerAnchor,
-    int visualizationVerticalMarkerHeight
+    int visualizationVerticalMarkerHeight,
+    boolean parallelRegionPlanning,
+    int parallelRegionThreads
 ) {
     public static CivPlacementConfig from(KingdomPlacementConfig source) {
         return new CivPlacementConfig(
@@ -82,7 +84,9 @@ public record CivPlacementConfig(
             source.command.defaultExportRegionRadius,
             source.visualization.defaultRadiusBlocks,
             source.visualization.particlesPerAnchor,
-            source.visualization.verticalMarkerHeight
+            source.visualization.verticalMarkerHeight,
+            source.performance.parallelRegionPlanning,
+            source.performance.parallelRegionThreads
         );
     }
 

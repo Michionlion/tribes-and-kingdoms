@@ -1,0 +1,143 @@
+# Region-level planning controls.
+[region]
+# Width/height of one planning region in blocks.
+# Higher: fewer, larger regions (coarser planning updates). Lower: more, smaller regions.
+regionSizeBlocks = 2048
+# Base spacing input for core anchor separation (planner currently scales this for kingdom spacing).
+# Higher: civilizations spread farther apart and tribe backfill also spaces out more.
+minAnchorSpacingBlocks = 512
+
+# Candidate sampling and terrain probing controls.
+[candidate]
+# Grid cell size used to generate one deterministic candidate point per cell.
+# Higher: fewer candidate points. Lower: denser candidate coverage.
+cellSizeBlocks = 256
+# Hard cap on candidate points evaluated per region after deterministic ordering.
+# Higher: more possible settlements. Lower: fewer total anchors.
+maxPerRegion = 12
+# Offset from the candidate center when sampling slope in cardinal directions (E/W/N/S).
+# Higher: slope checks look farther from center. Lower: slope checks stay more local.
+surfaceSampleOffsetBlocks = 8
+# Radius in blocks used when scanning for nearby water influence.
+# Higher: broader water influence. Lower: only local water affects score.
+waterSearchRadiusBlocks = 96
+# Base step input for radial water-biome probing; effective step is currently max(16, step*16).
+# Higher: faster but rougher water scoring. Lower: finer probing (chunk-aligned minimum of 16 blocks).
+waterSearchStepBlocks = 4
+# Maximum local elevation delta considered acceptable before slope score degrades heavily.
+# Higher: steeper terrain remains viable. Lower: steep terrain is penalized sooner.
+maxSlopeDelta = 5.0
+
+# Relative score component weights (do not need to sum to 1.0).
+[weights]
+# Influence of biome affinity on total suitability score.
+# Higher: biome matching dominates placement decisions.
+biome = 0.3
+# Influence of elevation suitability on total score.
+# Higher: preferred height bands matter more.
+height = 0.15
+# Influence of local slope/roughness on total score.
+# Higher: terrain steepness/flatness matters more.
+slope = 0.3
+# Influence of water proximity on total score.
+# Higher: settlements respond more to nearby water.
+water = 0.25
+
+# Suitability thresholds used for acceptance + pre-cluster tier banding (final anchor tiers use tier policy).
+[thresholds]
+# Minimum score for candidate acceptance (below this is rejected).
+# Higher: stricter acceptance, fewer anchors. Lower: more anchors accepted.
+wood = 0.45
+# STONE band floor for pre-cluster candidate tiering; also used to normalize capital tier policy score.
+# Higher: more WOOD-band candidates and stronger low-tier bias in policy input.
+stone = 0.55
+# IRON band floor for pre-cluster candidate tiering and tribe-promotion heuristics.
+# Higher: fewer IRON-band candidates and less high-score treatment in tribe heuristics.
+iron = 0.6
+# DIAMOND band floor for pre-cluster candidate tiering and high-score tribe suppression.
+# Higher: fewer DIAMOND-band candidates; lower allows more candidates to bypass tribe promotion.
+diamond = 0.68
+# NETHERITE band floor for pre-cluster candidate tiering/debug metadata.
+# Higher: fewer candidates labeled NETHERITE pre-cluster. Final capital tiers are still policy-weighted.
+netherite = 0.8
+
+# Settlement footprint and intra-cluster composition settings (satellites use ~half tier radius, min 16).
+[cluster]
+# Radius (blocks) used for WOOD settlement footprint.
+# Higher: larger WOOD settlement influence area.
+woodRadius = 48
+# Radius (blocks) used for STONE settlement footprint.
+# Higher: larger STONE settlement influence area.
+stoneRadius = 64
+# Radius (blocks) used for IRON settlement footprint.
+# Higher: larger IRON settlement influence area.
+ironRadius = 80
+# Radius (blocks) used for DIAMOND settlement footprint.
+# Higher: larger DIAMOND settlement influence area.
+diamondRadius = 96
+# Radius (blocks) used for NETHERITE settlement footprint.
+# Higher: larger NETHERITE settlement influence area.
+netheriteRadius = 112
+# Minimum number of satellites for a STONE capital cluster.
+# Higher: STONE kingdoms become denser.
+stoneSatelliteMin = 1
+# Maximum number of satellites for a STONE capital cluster.
+# Higher: increases STONE cluster upper density.
+stoneSatelliteMax = 3
+# Minimum number of satellites for an IRON capital cluster.
+# Higher: IRON kingdoms become denser.
+ironSatelliteMin = 2
+# Maximum number of satellites for an IRON capital cluster.
+# Higher: increases IRON cluster upper density.
+ironSatelliteMax = 4
+# Minimum number of satellites for a DIAMOND capital cluster.
+# Higher: DIAMOND kingdoms become denser.
+diamondSatelliteMin = 3
+# Maximum number of satellites for a DIAMOND capital cluster.
+# Higher: increases DIAMOND cluster upper density.
+diamondSatelliteMax = 6
+# Minimum number of satellites for a NETHERITE capital cluster.
+# Higher: NETHERITE kingdoms become denser.
+netheriteSatelliteMin = 5
+# Maximum number of satellites for a NETHERITE capital cluster.
+# Higher: increases NETHERITE cluster upper density.
+netheriteSatelliteMax = 7
+# Minimum distance from capital to satellites (and lower bound for satellite ring placement).
+# Higher: satellites are pushed farther from capitals.
+satelliteMinDistanceBlocks = 128
+# Maximum distance from capital to satellites (outer ring bound).
+# Higher: satellites can spread over a wider area.
+satelliteMaxDistanceBlocks = 384
+
+# Command radius settings (used by defaults where command arguments are optional).
+[command]
+# Default /kingdom generate around radius (in regions).
+# Higher: generates larger area per command.
+defaultAroundRegionRadius = 2
+# Default /kingdom summary radius (in regions).
+# Higher: summary aggregates more regions.
+defaultSummaryRegionRadius = 3
+# Default /kingdom export geojson radius (in regions).
+# Currently unused by command parser (export requires explicit radius argument).
+defaultExportRegionRadius = 4
+
+# In-world debug visualization defaults.
+[visualization]
+# Default radius in blocks for /kingdom visualize anchors.
+# Higher: visualizes anchors farther away from command source.
+defaultRadiusBlocks = 8192
+# Number of debug particles spawned per anchor marker.
+# Higher: more visible markers but more render/network load.
+particlesPerAnchor = 64
+# Vertical marker height in blocks for anchor visualization columns.
+# Higher: taller debug columns.
+verticalMarkerHeight = 128
+
+# Region planning performance controls.
+[performance]
+# Enables parallel planning for /kingdom generate around and parallel terrain export during analysis.
+# Set false to force deterministic sequential planning order for debugging.
+parallelRegionPlanning = true
+# Worker thread count for parallel region planning and terrain export worker pools.
+# 0 = auto (availableProcessors - 1).
+parallelRegionThreads = 0

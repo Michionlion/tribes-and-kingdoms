@@ -7,9 +7,16 @@ import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public final class KingdomPlacementConfigManager {
+    private static final String BUNDLED_DEFAULTS_RESOURCE = "kingdom.toml";
+    private static final String LEGACY_CONFIG_FILE_NAME = "kingdom-placement.toml";
+    private static final String CONFIG_FILE_NAME = "kingdom.toml";
     private static volatile boolean initialized;
 
     private KingdomPlacementConfigManager() {
@@ -20,6 +27,7 @@ public final class KingdomPlacementConfigManager {
             return;
         }
 
+        ensureConfigFileExistsWithBundledDefaults();
         AutoConfig.register(KingdomPlacementConfig.class, Toml4jConfigSerializer::new);
         ConfigHolder<KingdomPlacementConfig> holder = AutoConfig.getConfigHolder(KingdomPlacementConfig.class);
         holder.load();
@@ -40,6 +48,7 @@ public final class KingdomPlacementConfigManager {
 
     public static boolean reload() {
         ensureInitialized();
+        ensureConfigFileExistsWithBundledDefaults();
         return AutoConfig.getConfigHolder(KingdomPlacementConfig.class).load();
     }
 
@@ -49,7 +58,7 @@ public final class KingdomPlacementConfigManager {
     }
 
     public static Path configPath() {
-        return Platform.getConfigFolder().resolve("kingdom-placement.toml");
+        return Platform.getConfigFolder().resolve(CONFIG_FILE_NAME);
     }
 
     public static boolean setValue(String path, String rawValue) {
@@ -74,6 +83,8 @@ public final class KingdomPlacementConfigManager {
                 case "thresholds.netherite" -> config.thresholds.netherite = Double.parseDouble(rawValue);
                 case "cluster.min_satellite_distance" -> config.cluster.satelliteMinDistanceBlocks = Integer.parseInt(rawValue);
                 case "cluster.max_satellite_distance" -> config.cluster.satelliteMaxDistanceBlocks = Integer.parseInt(rawValue);
+                case "performance.parallel_region_planning" -> config.performance.parallelRegionPlanning = Boolean.parseBoolean(rawValue);
+                case "performance.parallel_region_threads" -> config.performance.parallelRegionThreads = Integer.parseInt(rawValue);
                 default -> {
                     return false;
                 }
@@ -94,6 +105,59 @@ public final class KingdomPlacementConfigManager {
     private static void ensureInitialized() {
         if (!initialized) {
             initialize();
+        }
+    }
+
+    private static void ensureConfigFileExistsWithBundledDefaults() {
+        Path configPath = configPath();
+        if (Files.isRegularFile(configPath)) {
+            return;
+        }
+
+        migrateLegacyConfigIfPresent(configPath);
+        if (Files.isRegularFile(configPath)) {
+            return;
+        }
+
+        try {
+            Path parent = configPath.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
+            try (InputStream stream = KingdomPlacementConfigManager.class
+                .getClassLoader()
+                .getResourceAsStream(BUNDLED_DEFAULTS_RESOURCE)) {
+                if (stream == null) {
+                    throw new IllegalStateException("Missing bundled defaults resource: " + BUNDLED_DEFAULTS_RESOURCE);
+                }
+                Files.copy(stream, configPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException error) {
+            throw new IllegalStateException("Failed to initialize config defaults at " + configPath.toAbsolutePath(), error);
+        }
+    }
+
+    private static void migrateLegacyConfigIfPresent(Path newConfigPath) {
+        Path legacyPath = Platform.getConfigFolder().resolve(LEGACY_CONFIG_FILE_NAME);
+        if (!Files.isRegularFile(legacyPath)) {
+            return;
+        }
+        if (Files.isRegularFile(newConfigPath)) {
+            return;
+        }
+
+        try {
+            Path parent = newConfigPath.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.move(legacyPath, newConfigPath);
+        } catch (IOException error) {
+            throw new IllegalStateException(
+                "Failed to migrate legacy config from " + legacyPath.toAbsolutePath() + " to " + newConfigPath.toAbsolutePath(),
+                error
+            );
         }
     }
 }

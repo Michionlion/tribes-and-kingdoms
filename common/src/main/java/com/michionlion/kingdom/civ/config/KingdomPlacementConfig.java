@@ -3,7 +3,7 @@ package com.michionlion.kingdom.civ.config;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 
-@Config(name = "kingdom-placement")
+@Config(name = "kingdom")
 public final class KingdomPlacementConfig implements ConfigData {
     public Region region = new Region();
     public Candidate candidate = new Candidate();
@@ -12,6 +12,7 @@ public final class KingdomPlacementConfig implements ConfigData {
     public Cluster cluster = new Cluster();
     public Command command = new Command();
     public Visualization visualization = new Visualization();
+    public Performance performance = new Performance();
 
     @Override
     public void validatePostLoad() throws ValidationException {
@@ -61,6 +62,8 @@ public final class KingdomPlacementConfig implements ConfigData {
         visualization.defaultRadiusBlocks = clamp(visualization.defaultRadiusBlocks, 64, 8192);
         visualization.particlesPerAnchor = clamp(visualization.particlesPerAnchor, 2, 128);
         visualization.verticalMarkerHeight = clamp(visualization.verticalMarkerHeight, 1, 64);
+
+        performance.parallelRegionThreads = clamp(performance.parallelRegionThreads, 0, 32);
     }
 
     private static int clamp(int value, int min, int max) {
@@ -73,7 +76,7 @@ public final class KingdomPlacementConfig implements ConfigData {
 
     public static final class Region {
         public int regionSizeBlocks = 2048;
-        public int minAnchorSpacingBlocks = 384;
+        public int minAnchorSpacingBlocks = 512;
     }
 
     public static final class Candidate {
@@ -116,8 +119,8 @@ public final class KingdomPlacementConfig implements ConfigData {
         public int netheriteSatelliteMin = 6;
         public int netheriteSatelliteMax = 8;
 
-        public int satelliteMinDistanceBlocks = 96;
-        public int satelliteMaxDistanceBlocks = 240;
+        public int satelliteMinDistanceBlocks = 128;
+        public int satelliteMaxDistanceBlocks = 320;
     }
 
     public static final class Command {
@@ -130,5 +133,11 @@ public final class KingdomPlacementConfig implements ConfigData {
         public int defaultRadiusBlocks = 2048;
         public int particlesPerAnchor = 28;
         public int verticalMarkerHeight = 12;
+    }
+
+    public static final class Performance {
+        public boolean parallelRegionPlanning = true;
+        // 0 = auto (availableProcessors - 1), otherwise explicit worker count.
+        public int parallelRegionThreads = 0;
     }
 }
